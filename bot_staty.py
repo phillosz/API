@@ -2,6 +2,9 @@ import discord
 from discord.ext import commands
 import requests
 import time
+import schedule
+import time
+import os
 from datetime import datetime
 
 # Nastavení bota
@@ -88,6 +91,24 @@ async def stats_command(ctx, player_name: str, date_from: str, date_to: str):
 @bot.command(name="ping")
 async def ping(ctx):
     await ctx.send("Pong!")
+    
+# Funkce pro vypnutí bota
+def stop_bot():
+    print("Bot se vypíná...")
+    os._exit(0)  # Vypne celý proces a šetří čas na Railway
 
-# Spuštění bota
-bot.run("MTMyNjkxMDY4MjA0NTc0MzE1NA.G4W2-Y.H4jux_lnuRTpkxDJrMXUMgNcQ7nqFkY7qPGZcs")
+# Funkce pro spuštění bota
+def start_bot():
+    print("Bot se spouští...")
+    bot.run("MTMyNjkxMDY4MjA0NTc0MzE1NA.G4W2-Y.H4jux_lnuRTpkxDJrMXUMgNcQ7nqFkY7qPGZcs")  # Nahraď token správnou proměnnou nebo proměnnou prostředí
+
+# Naplánuj vypnutí a zapnutí bota
+schedule.every().day.at("16:39").do(stop_bot)  # Vypne bota v 1 ráno
+schedule.every().day.at("16:42").do(start_bot)  # Spustí bota v 6 ráno
+
+# Spusť bota poprvé
+if __name__ == "__main__":
+    start_bot()  # Spustí bota při startu
+    while True:  # Kontroluje naplánované úkoly
+        schedule.run_pending()
+        time.sleep(1)
