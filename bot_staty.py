@@ -103,8 +103,8 @@ def start_bot():
     bot.run("MTMyNjkxMDY4MjA0NTc0MzE1NA.G4W2-Y.H4jux_lnuRTpkxDJrMXUMgNcQ7nqFkY7qPGZcs")  # Nahraď token správnou proměnnou nebo proměnnou prostředí
 
 # Naplánuj vypnutí a zapnutí bota
-schedule.every().day.at("16:47").do(stop_bot)  # Vypne bota v 1 ráno
-schedule.every().day.at("16:49").do(start_bot)  # Spustí bota v 6 ráno
+schedule.every().day.at("16:50").do(stop_bot)  # Vypne bota v 1 ráno
+schedule.every().day.at("16:52").do(start_bot)  # Spustí bota v 6 ráno
 
 # Spusť bota poprvé
 if __name__ == "__main__":
