@@ -3,8 +3,8 @@ from discord.ext import commands
 import requests
 import time
 import schedule
-import time
 import os
+import sys
 from datetime import datetime
 
 # Nastavení bota
@@ -95,7 +95,7 @@ async def ping(ctx):
 # Funkce pro vypnutí bota
 def stop_bot():
     print("Bot se vypíná...")
-    os._exit(0)  # Vypne celý proces a šetří čas na Railway
+    sys.exit("Bot se vypnul.")  # Vypne celý proces a šetří čas na Railway
 
 # Funkce pro spuštění bota
 def start_bot():
@@ -103,8 +103,8 @@ def start_bot():
     bot.run("MTMyNjkxMDY4MjA0NTc0MzE1NA.G4W2-Y.H4jux_lnuRTpkxDJrMXUMgNcQ7nqFkY7qPGZcs")  # Nahraď token správnou proměnnou nebo proměnnou prostředí
 
 # Naplánuj vypnutí a zapnutí bota
-schedule.every().day.at("16:50").do(stop_bot)  # Vypne bota v 1 ráno
-schedule.every().day.at("16:52").do(start_bot)  # Spustí bota v 6 ráno
+schedule.every().day.at("17:10").do(stop_bot)  # Vypne bota v 1 ráno
+schedule.every().day.at("17:15").do(start_bot)  # Spustí bota v 6 ráno
 
 # Spusť bota poprvé
 if __name__ == "__main__":
