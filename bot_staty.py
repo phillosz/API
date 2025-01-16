@@ -118,20 +118,25 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
     return embed
 
 def generate_graph(player1_name, player1_data, player2_name, player2_data):
+    def safe_float(value):
+        if isinstance(value, str) and value.endswith('%'):
+            return float(value.strip('%'))
+        return float(value)
+
     labels = ['Rank', 'Average', 'Checkout %', 'Max per Leg', 'Maximums']
     player1_values = [
-        float(player1_data.get('rank', 0)),
-        float(player1_data.get('average', 0)),
-        float(player1_data.get('checkout_pcnt', 0)),
-        float(player1_data.get('maximum_per_leg', 0)),
-        float(player1_data.get('maximums', 0))
+        safe_float(player1_data.get('rank', 0)),
+        safe_float(player1_data.get('average', 0)),
+        safe_float(player1_data.get('checkout_pcnt', 0)),
+        safe_float(player1_data.get('maximum_per_leg', 0)),
+        safe_float(player1_data.get('maximums', 0))
     ]
     player2_values = [
-        float(player2_data.get('rank', 0)),
-        float(player2_data.get('average', 0)),
-        float(player2_data.get('checkout_pcnt', 0)),
-        float(player2_data.get('maximum_per_leg', 0)),
-        float(player2_data.get('maximums', 0))
+        safe_float(player2_data.get('rank', 0)),
+        safe_float(player2_data.get('average', 0)),
+        safe_float(player2_data.get('checkout_pcnt', 0)),
+        safe_float(player2_data.get('maximum_per_leg', 0)),
+        safe_float(player2_data.get('maximums', 0))
     ]
 
     x = range(len(labels))
