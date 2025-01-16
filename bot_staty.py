@@ -1,20 +1,23 @@
 import discord
 from discord.ext import commands
 import requests
-import time
 from datetime import datetime
 from aiocache import Cache
-import matplotlib.pyplot as plt
-
-# Nastavení cache
-cache = Cache(Cache.MEMORY)
+from aiocache.decorators import cached
 
 # Nastavení bota
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# Cache nastavení
+cache = Cache(Cache.MEMORY)
+
+# Prémioví uživatelé
+PREMIUM_USERS = ["586540043812864050"]
+
 # Funkce pro získání dat z API
+@cached(ttl=3600, cache=cache)
 def get_data(url):
     response = requests.get(url)
     if response.status_code == 200:
@@ -22,95 +25,78 @@ def get_data(url):
     else:
         return None
 
-# Generování grafu
-def plot_player_stats(player_name, player_data):
-    categories = ['Rank', 'Maximums', 'Average', 'Checkout %']
-    values = [
-        player_data.get('rank', 0),
-        player_data.get('maximums', 0),
-        player_data.get('average', 0),
-        player_data.get('checkout_pcnt', 0)
-    ]
-    plt.bar(categories, values, color=['blue', 'green', 'orange', 'red'])
-    plt.title(f"Statistiky: {player_name}")
-    plt.ylabel("Hodnota")
-    plt.savefig("stats.png")
-    plt.close()
-
-# Funkce pro získání statistik hráče
 async def fetch_player_data(player_name, date_from, date_to):
-    cache_key = f"{player_name}_{date_from}_{date_to}"
-    cached_data = await cache.get(cache_key)
-    if cached_data:
-        return cached_data
+    timestamp = int(datetime.now().timestamp() * 1000)
 
-    timestamp = int(time.time() * 1000)
     base_url = f"https://app.dartsorakel.com/api/stats/player?dateFrom={date_from}&dateTo={date_to}&rankKey=26&organStat=All&tourns=All&minMatches=200&tourCardYear=&showStatsBreakdown=0&_={timestamp}"
     url_response = get_data(base_url)
     if not url_response:
-        return "Chyba při načítání dat."
+        return None
 
     data = url_response["data"]
     player_data = {}
     for player in data:
-        player_data[player['player_name']] = {
-            'player_name': player['player_name'],
-            'player_key': player['player_key'],
-            'rank': player['rank'],
-            'maximums': player['stat']
-        }
+        if player['player_name'] == player_name:
+            player_data = {
+                'player_name': player['player_name'],
+                'rank': player['rank'],
+                'maximums': player['stat']
+            }
+            break
 
-    if player_name not in player_data:
-        return f"Hráč {player_name} nebyl nalezen."
+    if not player_data:
+        return None
 
-    player = player_data[player_name]
+    return player_data
 
-    result_embed = discord.Embed(
-        title=f"Statistiky pro hráče {player['player_name']}",
-        color=0x00ff00,
-    )
-    result_embed.add_field(name="Rank", value=player['rank'], inline=False)
-    result_embed.add_field(name="Maximums", value=player.get('maximums', 'N/A'), inline=True)
-
-    # Uložení do cache
-    await cache.set(cache_key, result_embed, ttl=3600)  # Cache na 1 hodinu
-    return result_embed
-
-# Příkaz pro získání statistik
+# Příkaz pro běžné statistiky
 @bot.command(name="stats")
 async def stats_command(ctx, player_name: str, date_from: str, date_to: str):
     try:
         datetime.strptime(date_from.strip(), "%Y-%m-%d")
         datetime.strptime(date_to.strip(), "%Y-%m-%d")
-    except ValueError as e:
-        await ctx.send(f"Chyba ve formátu dat: {e}\nZadejte data ve formátu YYYY-MM-DD.")
+    except ValueError:
+        await ctx.send("Chyba ve formátu data. Použijte YYYY-MM-DD.")
         return
 
-    result_embed = await fetch_player_data(player_name, date_from, date_to)
-    await ctx.send(embed=result_embed)
+    player_data = await fetch_player_data(player_name, date_from, date_to)
+    if not player_data:
+        await ctx.send("Hráč nebyl nalezen nebo došlo k chybě při načítání dat.")
+        return
 
-# Prémiový příkaz pro generování grafů
-premium_users = [586540043812864050]  # Nahraďte ID uživatelů prémiového přístupu
+    embed = discord.Embed(title=f"Statistiky hráče {player_data['player_name']}", color=0x3498db)
+    embed.add_field(name="Rank", value=player_data['rank'], inline=False)
+    embed.add_field(name="Počet 180", value=player_data['maximums'], inline=False)
 
+    await ctx.send(embed=embed)
+
+# Příkaz pro prémiové statistiky
 @bot.command(name="premium_stats")
-async def premium_stats(ctx, player_name: str, date_from: str, date_to: str):
-    if ctx.author.id not in premium_users:
+async def premium_stats_command(ctx, player_name: str, date_from: str, date_to: str):
+    if str(ctx.author.id) not in PREMIUM_USERS:
         await ctx.send("Tento příkaz je dostupný pouze pro prémiové uživatele.")
         return
 
-    result_embed = await fetch_player_data(player_name, date_from, date_to)
-    if isinstance(result_embed, discord.Embed):
-        player_data = {
-            'rank': result_embed.fields[0].value,
-            'maximums': result_embed.fields[1].value,
-            'average': 50,  # Příkladová data
-            'checkout_pcnt': 80  # Příkladová data
-        }
-        plot_player_stats(player_name, player_data)
-        await ctx.send(embed=result_embed)
-        await ctx.send(file=discord.File("stats.png"))
-    else:
-        await ctx.send(result_embed)
+    try:
+        datetime.strptime(date_from.strip(), "%Y-%m-%d")
+        datetime.strptime(date_to.strip(), "%Y-%m-%d")
+    except ValueError:
+        await ctx.send("Chyba ve formátu data. Použijte YYYY-MM-DD.")
+        return
+
+    player_data = await fetch_player_data(player_name, date_from, date_to)
+    if not player_data:
+        await ctx.send("Hráč nebyl nalezen nebo došlo k chybě při načítání dat.")
+        return
+
+    embed = discord.Embed(title=f"Prémiové statistiky hráče {player_data['player_name']}", color=0xf1c40f)
+    embed.add_field(name="Rank", value=player_data['rank'], inline=False)
+    embed.add_field(name="Počet 180", value=player_data['maximums'], inline=False)
+
+    # Placeholder pro graf
+    embed.add_field(name="Graf", value="(Graf bude přidán brzy)", inline=False)
+
+    await ctx.send(embed=embed)
 
 # Testovací příkaz
 @bot.command(name="ping")
