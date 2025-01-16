@@ -78,21 +78,8 @@ async def stats_command(ctx, player_name: str, date_from: str, date_to: str):
         await ctx.send(f"Data pro hráče {player_name} nebyla nalezena.")
         return
 
-    embed = discord.Embed(
-        title=f"Statistiky pro hráče {player_data['player_name']}",
-        color=discord.Color.blue()
-    )
-    embed.add_field(name="Rank", value=player_data.get("rank", "N/A"))
-    embed.add_field(name="Maximums", value=player_data.get("maximums", "N/A"))
-    embed.add_field(name="Average", value=player_data.get("average", "N/A"))
-    embed.add_field(name="Current Average", value=player_data.get("average_actual", "N/A"))
-    embed.add_field(name="Checkout %", value=player_data.get("checkout_pcnt", "N/A"))
-    embed.add_field(name="Current Checkout %", value=player_data.get("checkout_pcnt_actual", "N/A"))
-    embed.add_field(name="Maximums per Leg", value=player_data.get("maximum_per_leg", "N/A"))
-    embed.add_field(name="Current Maximums per Leg", value=player_data.get("maximum_per_leg_actual", "N/A"))
-
+    embed = create_premium_embed(player_name, player_data)
     await ctx.send(embed=embed)
-
 
 def create_premium_embed(player_name, data):
     embed = discord.Embed(
@@ -114,12 +101,19 @@ def create_premium_embed(player_name, data):
 # Příkaz pro prémiové statistiky
 @bot.command(name="premiumstats")
 async def premium_stats_command(ctx, player_name: str, date_from: str, date_to: str):
-    data = await fetch_player_data(player_name, date_from, date_to)
-    if isinstance(data, str):
-        await ctx.send(data)
+    try:
+        datetime.strptime(date_from, "%Y-%m-%d")
+        datetime.strptime(date_to, "%Y-%m-%d")
+    except ValueError as e:
+        await ctx.send(f"Chyba ve formátu dat: {e}")
         return
 
-    embed = create_premium_embed(player_name, data)
+    player_data = await fetch_player_data(player_name, date_from, date_to)
+    if not player_data:
+        await ctx.send(f"Data pro hráče {player_name} nebyla nalezena.")
+        return
+
+    embed = create_premium_embed(player_name, player_data)
     await ctx.send(embed=embed)
 
 # Testovací příkaz
