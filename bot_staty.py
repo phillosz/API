@@ -83,7 +83,7 @@ def create_embed(player_name, data, color, description):
         embed.add_field(name="🎲 Maximums celkem", value=data["maximums"], inline=True)
 
     embed.set_footer(text="Statistiky poskytované vaším botem!")
-    embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&dl=0")  # Add a relevant thumbnail URL
+    embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
 
     return embed
 
