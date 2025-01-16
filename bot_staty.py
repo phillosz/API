@@ -134,4 +134,4 @@ async def ping_command(ctx):
     await ctx.send("Pong!")
 
 # Spuštění bota
-bot.run("Y.H4jux_lnuRTpkxDJrMXUMgNcQ7nqFkY7qPGZcs")
+bot.run("MTMyNjkxMDY4MjA0NTc0MzE1NA.G4W2-Y.H4jux_lnuRTpkxDJrMXUMgNcQ7nqFkY7qPGZcs")
