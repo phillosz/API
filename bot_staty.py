@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import io
 from aiocache import cached, SimpleMemoryCache
 import requests
+import aiohttp  # Add this import for asynchronous HTTP requests
 
 # Nastavení bota
 intents = discord.Intents.default()
@@ -17,9 +18,10 @@ PREMIUM_USERS = {586540043812864050}  # Změň na své ID
 # Funkce pro získání dat z API (s cache)
 @cached(ttl=3600, cache=SimpleMemoryCache)
 async def get_data(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                return await response.json()
     return None
 
 async def fetch_player_data(player_name, date_from, date_to):
@@ -233,4 +235,4 @@ async def ping_command(ctx):
     await ctx.send("Pong!")
 
 # Spuštění bota
-bot.run("MTMyNjkxMDY4MjA0NTc0MzE1NA.G4W2-Y.H4jux_lnuRTpkxDJrMXUMgNcQ7nqFkY7qPGZcs")
+bot.run("YOUR_BOT_TOKEN_HERE")  # Replace with a secure way to load the token
