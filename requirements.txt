@@ -2,3 +2,5 @@ discord.py
 requests
 flask
 schedule
+matplotlib
+aiocache
