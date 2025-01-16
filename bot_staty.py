@@ -123,37 +123,38 @@ def generate_graph(player1_name, player1_data, player2_name, player2_data):
             return float(value.strip('%'))
         return float(value)
 
-    labels = ['Rank', 'Average', 'Checkout %', 'Max per Leg', 'Maximums']
+    labels = ['Average', 'Checkout %', 'Max per Leg']
     player1_values = [
-        safe_float(player1_data.get('rank', 0)),
         safe_float(player1_data.get('average', 0)),
         safe_float(player1_data.get('checkout_pcnt', 0)),
-        safe_float(player1_data.get('maximum_per_leg', 0)),
-        safe_float(player1_data.get('maximums', 0))
+        safe_float(player1_data.get('maximum_per_leg', 0))
     ]
     player2_values = [
-        safe_float(player2_data.get('rank', 0)),
         safe_float(player2_data.get('average', 0)),
         safe_float(player2_data.get('checkout_pcnt', 0)),
-        safe_float(player2_data.get('maximum_per_leg', 0)),
-        safe_float(player2_data.get('maximums', 0))
+        safe_float(player2_data.get('maximum_per_leg', 0))
     ]
 
-    x = range(len(labels))
+    fig, axs = plt.subplots(1, 3, figsize=(18, 6))
 
-    fig, ax = plt.subplots()
-    ax.bar(x, player1_values, width=0.4, label=player1_name, align='center')
-    ax.bar(x, player2_values, width=0.4, label=player2_name, align='edge')
+    # Average
+    axs[0].pie([player1_values[0], player2_values[0]], labels=[player1_name, player2_name], autopct='%1.1f%%', startangle=140)
+    axs[0].set_title('Average')
 
-    ax.set_ylabel('Values')
-    ax.set_title('Player Comparison')
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-    ax.legend()
+    # Checkout %
+    axs[1].pie([player1_values[1], player2_values[1]], labels=[player1_name, player2_name], autopct='%1.1f%%', startangle=140)
+    axs[1].set_title('Checkout %')
+
+    # Max per Leg
+    axs[2].pie([player1_values[2], player2_values[2]], labels=[player1_name, player2_name], autopct='%1.1f%%', startangle=140)
+    axs[2].set_title('Max per Leg')
+
+    plt.tight_layout()
 
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
+    plt.close(fig)
     return buf
 
 import numpy as np
