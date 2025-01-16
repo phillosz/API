@@ -156,6 +156,47 @@ def generate_graph(player1_name, player1_data, player2_name, player2_data):
     buf.seek(0)
     return buf
 
+import numpy as np
+
+async def plot_player_statistics(player_data):
+    # Extract data
+    player_names = list(player_data.keys())
+    averages = [player_data[player]['average'] for player in player_names]
+    checkout_pcents = [player_data[player]['checkout_pcnt'] for player in player_names]
+    maximums_per_leg = [player_data[player]['maximums_per_leg'] for player in player_names]
+
+    # Create subplots
+    fig, axs = plt.subplots(1, 3, figsize=(18, 6))
+
+    # Plot average
+    axs[0].bar(player_names, averages, color='blue')
+    axs[0].set_title('Average')
+    axs[0].set_ylabel('Average')
+    axs[0].set_xticklabels(player_names, rotation=45, ha='right')
+
+    # Plot checkout percentage
+    axs[1].bar(player_names, checkout_pcents, color='green')
+    axs[1].set_title('Checkout Percentage')
+    axs[1].set_ylabel('Checkout %')
+    axs[1].set_xticklabels(player_names, rotation=45, ha='right')
+
+    # Plot maximums per leg
+    axs[2].bar(player_names, maximums_per_leg, color='red')
+    axs[2].set_title('Maximums per Leg')
+    axs[2].set_ylabel('Maximums per Leg')
+    axs[2].set_xticklabels(player_names, rotation=45, ha='right')
+
+    # Adjust layout
+    plt.tight_layout()
+
+    # Save the plot to a BytesIO object
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    plt.close(fig)
+
+    return buf
+
 # Příkaz pro základní statistiky
 @bot.command(name="stats")
 async def stats_command(ctx, player_name: str, date_from: str = None, date_to: str = None):
@@ -178,6 +219,9 @@ async def stats_command(ctx, player_name: str, date_from: str = None, date_to: s
 
     embed = create_embed(player_name, player_data, discord.Color.blue(), "Základní zobrazení statistik")
     await ctx.send(embed=embed)
+
+    buf = await plot_player_statistics(player_data)
+    await ctx.send(file=discord.File(buf, 'player_stats.png'))
 
 def create_premium_embed(player_name, data):
     return create_embed(player_name, data, discord.Color.gold(), "Prémiové zobrazení statistik")
