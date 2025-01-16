@@ -63,6 +63,23 @@ async def fetch_player_data(player_name, date_from, date_to):
 
     return player_data[player_name]
 
+def create_embed(player_name, data, color, description):
+    embed = discord.Embed(
+        title=f"Statistiky pro hráče {player_name}",
+        description=description,
+        color=color  # Barva embedu
+    )
+
+    # Přidáme dvojice statistik
+    embed.add_field(name="🏆 Rank", value=data["rank"], inline=True)
+    embed.add_field(name="🎯 Average", value=f"{data['average']} (Current: {data['average_actual']})", inline=False)
+    embed.add_field(name="✅ Checkout %", value=f"{data['checkout_pcnt']} (Current: {data['checkout_pcnt_actual']})", inline=False)
+    embed.add_field(name="💥 Max per Leg", value=f"{data['maximum_per_leg']} (Current: {data['maximum_per_leg_actual']})", inline=False)
+    embed.add_field(name="🎲 Maximums celkem", value=data["maximums"], inline=True)
+
+    embed.set_footer(text="Statistiky poskytované vaším botem!")
+    return embed
+
 # Příkaz pro základní statistiky
 @bot.command(name="stats")
 async def stats_command(ctx, player_name: str, date_from: str, date_to: str):
@@ -78,25 +95,11 @@ async def stats_command(ctx, player_name: str, date_from: str, date_to: str):
         await ctx.send(f"Data pro hráče {player_name} nebyla nalezena.")
         return
 
-    embed = create_premium_embed(player_name, player_data)
+    embed = create_embed(player_name, player_data, discord.Color.blue(), "Základní zobrazení statistik")
     await ctx.send(embed=embed)
 
 def create_premium_embed(player_name, data):
-    embed = discord.Embed(
-        title=f"Statistiky pro hráče {player_name}",
-        description="Prémiové zobrazení statistik",
-        color=discord.Color.gold()  # Barva embedu
-    )
-
-    # Přidáme dvojice statistik
-    embed.add_field(name="🏆 Rank", value=data["rank"], inline=True)
-    embed.add_field(name="🎯 Average", value=f"{data['average']} (Current: {data['average_actual']})", inline=False)
-    embed.add_field(name="✅ Checkout %", value=f"{data['checkout_pcnt']} (Current: {data['checkout_pcnt_actual']})", inline=False)
-    embed.add_field(name="💥 Max per Leg", value=f"{data['maximum_per_leg']} (Current: {data['maximum_per_leg_actual']})", inline=False)
-    embed.add_field(name="🎲 Maximums celkem", value=data["maximums"], inline=True)
-
-    embed.set_footer(text="Prémiové statistiky poskytované vaším botem!")
-    return embed
+    return create_embed(player_name, data, discord.Color.gold(), "Prémiové zobrazení statistik")
 
 # Příkaz pro prémiové statistiky
 @bot.command(name="premiumstats")
