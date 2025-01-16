@@ -169,6 +169,8 @@ def create_premium_embed(player_name, data):
     if "additional_stats" in data:
         additional_stats = data["additional_stats"]
         for stat_name, stat_values in additional_stats.items():
+            # Convert None values to empty strings
+            stat_values = [str(value) if value is not None else '' for value in stat_values]
             embed.add_field(name=stat_name, value=", ".join(stat_values), inline=False)
 
     embed.set_footer(text="Pro další informace použijte !help, nebo kontaktujte vývojáře.")
@@ -266,6 +268,8 @@ def create_premium_embed(player_name, data):
     if "additional_stats" in data:
         additional_stats = data["additional_stats"]
         for stat_name, stat_values in additional_stats.items():
+            # Convert None values to empty strings
+            stat_values = [str(value) if value is not None else '' for value in stat_values]
             embed.add_field(name=stat_name, value=", ".join(stat_values), inline=False)
 
     embed.set_footer(text="Pro další informace použijte !help, nebo kontaktujte vývojáře.")
