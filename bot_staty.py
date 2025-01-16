@@ -1,10 +1,10 @@
-from aiocache import cached, SimpleMemoryCache
 import discord
 from discord.ext import commands
-import requests
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import io
+from aiocache import cached, SimpleMemoryCache
+import requests
 
 # Nastavení bota
 intents = discord.Intents.default()
