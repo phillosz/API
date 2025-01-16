@@ -1,10 +1,8 @@
 import discord
 from discord.ext import commands
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
 import io
 from aiocache import cached, SimpleMemoryCache
-import requests
 import aiohttp  # Add this import for asynchronous HTTP requests
 
 # Nastavení bota
@@ -140,6 +138,44 @@ def create_embed(player_name, data, color, description):
 
     return embed
 
+def create_premium_embed(player_name, data):
+    fill_missing_stats(data)
+
+    embed = discord.Embed(
+        title=f"Prémiové statistiky pro hráče {player_name}",
+        description="Prémiové zobrazení statistik",
+        color=discord.Color.gold()  # Barva embedu
+    )
+
+    # Přidáme dvojice statistik
+    if "rank" in data:
+        embed.add_field(name="🏆 Rank", value=data["rank"], inline=True)
+    if "average" in data or "average_actual" in data:
+        average = data.get('average', 'N/A')
+        average_actual = data.get('average_actual', 'N/A')
+        embed.add_field(name="🎯 Average", value=f"{average} (Current: {average_actual})", inline=False)
+    if "checkout_pcnt" in data or "checkout_pcnt_actual" in data:
+        checkout_pcnt = data.get('checkout_pcnt', 'N/A')
+        checkout_pcnt_actual = data.get('checkout_pcnt_actual', 'N/A')
+        embed.add_field(name="✅ Checkout %", value=f"{checkout_pcnt} (Current: {checkout_pcnt_actual})", inline=False)
+    if "maximum_per_leg" in data or "maximum_per_leg_actual" in data:
+        maximum_per_leg = data.get('maximum_per_leg', 'N/A')
+        maximum_per_leg_actual = data.get('maximum_per_leg_actual', 'N/A')
+        embed.add_field(name="💥 Max per Leg", value=f"{maximum_per_leg} (Current: {maximum_per_leg_actual})", inline=False)
+    if "maximums" in data:
+        embed.add_field(name="🎲 Maximums celkem", value=data["maximums"], inline=True)
+
+    # Add additional stats if available
+    if "additional_stats" in data:
+        additional_stats = data["additional_stats"]
+        for stat_name, stat_values in additional_stats.items():
+            embed.add_field(name=stat_name, value=", ".join(stat_values), inline=False)
+
+    embed.set_footer(text="Pro další informace použijte !help, nebo kontaktujte vývojáře.")
+    embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
+
+    return embed
+
 def create_comparison_embed(player1_name, player1_data, player2_name, player2_data):
     fill_missing_stats(player1_data)
     fill_missing_stats(player2_data)
@@ -174,53 +210,7 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
     embed.set_footer(text="Statistiky poskytované vaším botem!")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")
 
-    # Generate graph
-    graph_buf = generate_graph(player1_name, player1_data, player2_name, player2_data)
-    file = discord.File(graph_buf, filename="comparison.png")
-    embed.set_image(url="attachment://comparison.png")
-
     return embed
-
-import numpy as np
-
-async def plot_player_statistics(player_data):
-    # Extract data
-    player_names = list(player_data.keys())
-    averages = [player_data[player]['average'] for player in player_names]
-    checkout_pcents = [player_data[player]['checkout_pcnt'] for player in player_names]
-    maximums_per_leg = [player_data[player]['maximums_per_leg'] for player in player_names]
-
-    # Create subplots
-    fig, axs = plt.subplots(1, 3, figsize=(18, 6))
-
-    # Plot average
-    axs[0].bar(player_names, averages, color='blue')
-    axs[0].set_title('Average')
-    axs[0].set_ylabel('Average')
-    axs[0].set_xticklabels(player_names, rotation=45, ha='right')
-
-    # Plot checkout percentage
-    axs[1].bar(player_names, checkout_pcents, color='green')
-    axs[1].set_title('Checkout Percentage')
-    axs[1].set_ylabel('Checkout %')
-    axs[1].set_xticklabels(player_names, rotation=45, ha='right')
-
-    # Plot maximums per leg
-    axs[2].bar(player_names, maximums_per_leg, color='red')
-    axs[2].set_title('Maximums per Leg')
-    axs[2].set_ylabel('Maximums per Leg')
-    axs[2].set_xticklabels(player_names, rotation=45, ha='right')
-
-    # Adjust layout
-    plt.tight_layout()
-
-    # Save the plot to a BytesIO object
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    buf.seek(0)
-    plt.close(fig)
-
-    return buf
 
 # Příkaz pro základní statistiky
 @bot.command(name="stats")
@@ -245,11 +235,43 @@ async def stats_command(ctx, player_name: str, date_from: str = None, date_to: s
     embed = create_embed(player_name, player_data, discord.Color.blue(), "Základní zobrazení statistik")
     await ctx.send(embed=embed)
 
-    buf = await plot_player_statistics(player_data)
-    await ctx.send(file=discord.File(buf, 'player_stats.png'))
-
 def create_premium_embed(player_name, data):
-    return create_embed(player_name, data, discord.Color.gold(), "Prémiové zobrazení statistik")
+    fill_missing_stats(data)
+
+    embed = discord.Embed(
+        title=f"Prémiové statistiky pro hráče {player_name}",
+        description="Prémiové zobrazení statistik",
+        color=discord.Color.gold()  # Barva embedu
+    )
+
+    # Přidáme dvojice statistik
+    if "rank" in data:
+        embed.add_field(name="🏆 Rank", value=data["rank"], inline=True)
+    if "average" in data or "average_actual" in data:
+        average = data.get('average', 'N/A')
+        average_actual = data.get('average_actual', 'N/A')
+        embed.add_field(name="🎯 Average", value=f"{average} (Current: {average_actual})", inline=False)
+    if "checkout_pcnt" in data or "checkout_pcnt_actual" in data:
+        checkout_pcnt = data.get('checkout_pcnt', 'N/A')
+        checkout_pcnt_actual = data.get('checkout_pcnt_actual', 'N/A')
+        embed.add_field(name="✅ Checkout %", value=f"{checkout_pcnt} (Current: {checkout_pcnt_actual})", inline=False)
+    if "maximum_per_leg" in data or "maximum_per_leg_actual" in data:
+        maximum_per_leg = data.get('maximum_per_leg', 'N/A')
+        maximum_per_leg_actual = data.get('maximum_per_leg_actual', 'N/A')
+        embed.add_field(name="💥 Max per Leg", value=f"{maximum_per_leg} (Current: {maximum_per_leg_actual})", inline=False)
+    if "maximums" in data:
+        embed.add_field(name="🎲 Maximums celkem", value=data["maximums"], inline=True)
+
+    # Add additional stats if available
+    if "additional_stats" in data:
+        additional_stats = data["additional_stats"]
+        for stat_name, stat_values in additional_stats.items():
+            embed.add_field(name=stat_name, value=", ".join(stat_values), inline=False)
+
+    embed.set_footer(text="Pro další informace použijte !help, nebo kontaktujte vývojáře.")
+    embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
+
+    return embed
 
 # Příkaz pro prémiové statistiky
 @bot.command(name="premiumstats")
@@ -299,9 +321,7 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
         return
 
     embed = create_comparison_embed(player1_name, player1_data, player2_name, player2_data)
-    graph_buf = generate_graph(player1_name, player1_data, player2_name, player2_data)
-    file = discord.File(graph_buf, filename="comparison.png")
-    await ctx.send(embed=embed, file=file)
+    await ctx.send(embed=embed)
 
 # Testovací příkaz
 @bot.command(name="ping")
