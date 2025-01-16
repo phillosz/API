@@ -14,7 +14,7 @@ PREMIUM_USERS = {586540043812864050}  # Změň na své ID
 
 # Funkce pro získání dat z API (s cache)
 @cached(ttl=3600, cache=SimpleMemoryCache)  # Použití paměťové cache
-def get_data(url):
+async def get_data(url):
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()
@@ -24,7 +24,7 @@ async def fetch_player_data(player_name, date_from, date_to):
     # Základní API volání
     timestamp = int(datetime.now().timestamp() * 1000)
     base_url = f"https://app.dartsorakel.com/api/stats/player?dateFrom={date_from}&dateTo={date_to}&rankKey=26&organStat=All&tourns=All&minMatches=200&tourCardYear=&showStatsBreakdown=0&_={timestamp}"
-    url_response = get_data(base_url)
+    url_response = await get_data(base_url)  # Použití `await`
     if not url_response:
         return None
 
