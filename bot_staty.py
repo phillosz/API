@@ -86,21 +86,30 @@ async def fetch_player_data(player_name, date_from, date_to):
 
     return player_data[player_name]
 
-def fill_missing_current_stats(data):
+def fill_missing_stats(data):
     if "additional_stats" not in data:
         return
 
     additional_stats = data["additional_stats"]
 
+    def calculate_average(values):
+        return sum(float(v.strip('%')) if isinstance(v, str) and v.endswith('%') else float(v) for v in values) / len(values)
+
+    if "average" not in data and "Averages" in additional_stats:
+        data["average"] = calculate_average(additional_stats["Averages"])
     if "average_actual" not in data and "Averages" in additional_stats:
         data["average_actual"] = additional_stats["Averages"][-1]
+    if "checkout_pcnt" not in data and "Checkout Pcnt" in additional_stats:
+        data["checkout_pcnt"] = f"{calculate_average(additional_stats['Checkout Pcnt']):.2f}%"
     if "checkout_pcnt_actual" not in data and "Checkout Pcnt" in additional_stats:
         data["checkout_pcnt_actual"] = additional_stats["Checkout Pcnt"][-1]
+    if "maximum_per_leg" not in data and "180's per leg" in additional_stats:
+        data["maximum_per_leg"] = calculate_average(additional_stats["180's per leg"])
     if "maximum_per_leg_actual" not in data and "180's per leg" in additional_stats:
         data["maximum_per_leg_actual"] = additional_stats["180's per leg"][-1]
 
 def create_embed(player_name, data, color, description):
-    fill_missing_current_stats(data)
+    fill_missing_stats(data)
 
     embed = discord.Embed(
         title=f"Statistiky pro hráče {player_name}",
@@ -126,20 +135,14 @@ def create_embed(player_name, data, color, description):
     if "maximums" in data:
         embed.add_field(name="🎲 Maximums celkem", value=data["maximums"], inline=True)
 
-    # Add additional stats if available
-    if "additional_stats" in data:
-        additional_stats = data["additional_stats"]
-        for stat_name, stat_values in additional_stats.items():
-            embed.add_field(name=stat_name, value=", ".join(stat_values), inline=False)
-
     embed.set_footer(text="Pro další informace použijte !help, nebo kontaktujte vývojáře.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
 
     return embed
 
 def create_comparison_embed(player1_name, player1_data, player2_name, player2_data):
-    fill_missing_current_stats(player1_data)
-    fill_missing_current_stats(player2_data)
+    fill_missing_stats(player1_data)
+    fill_missing_stats(player2_data)
 
     embed = discord.Embed(title="Porovnání hráčů", color=discord.Color.purple())
     
@@ -168,14 +171,6 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
     if "maximums" in player1_data and "maximums" in player2_data:
         embed.add_field(name="🎲 Maximums celkem", value=f"{player1_data['maximums']} 🆚 {player2_data['maximums']}", inline=True)
 
-    # Add additional stats if available
-    if "additional_stats" in player1_data and "additional_stats" in player2_data:
-        additional_stats1 = player1_data["additional_stats"]
-        additional_stats2 = player2_data["additional_stats"]
-        for stat_name in additional_stats1.keys():
-            if stat_name in additional_stats2:
-                embed.add_field(name=stat_name, value=f"{', '.join(additional_stats1[stat_name])} 🆚 {', '.join(additional_stats2[stat_name])}", inline=False)
-
     embed.set_footer(text="Statistiky poskytované vaším botem!")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")
 
@@ -185,46 +180,6 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
     embed.set_image(url="attachment://comparison.png")
 
     return embed
-
-def generate_graph(player1_name, player1_data, player2_name, player2_data):
-    def safe_float(value):
-        if isinstance(value, str) and value.endswith('%'):
-            return float(value.strip('%'))
-        return float(value)
-
-    labels = ['Average', 'Checkout %', 'Max per Leg']
-    player1_values = [
-        safe_float(player1_data.get('average', 0)),
-        safe_float(player1_data.get('checkout_pcnt', 0)),
-        safe_float(player1_data.get('maximum_per_leg', 0))
-    ]
-    player2_values = [
-        safe_float(player2_data.get('average', 0)),
-        safe_float(player2_data.get('checkout_pcnt', 0)),
-        safe_float(player2_data.get('maximum_per_leg', 0))
-    ]
-
-    fig, axs = plt.subplots(1, 3, figsize=(18, 6))
-
-    # Average
-    axs[0].pie([player1_values[0], player2_values[0]], labels=[player1_name, player2_name], autopct='%1.1f%%', startangle=140)
-    axs[0].set_title('Average')
-
-    # Checkout %
-    axs[1].pie([player1_values[1], player2_values[1]], labels=[player1_name, player2_name], autopct='%1.1f%%', startangle=140)
-    axs[1].set_title('Checkout %')
-
-    # Max per Leg
-    axs[2].pie([player1_values[2], player2_values[2]], labels=[player1_name, player2_name], autopct='%1.1f%%', startangle=140)
-    axs[2].set_title('Max per Leg')
-
-    plt.tight_layout()
-
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    buf.seek(0)
-    plt.close(fig)
-    return buf
 
 import numpy as np
 
