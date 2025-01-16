@@ -77,16 +77,22 @@ def create_embed(player_name, data, color, description):
     # Přidáme dvojice statistik
     if "rank" in data:
         embed.add_field(name="🏆 Rank", value=data["rank"], inline=True)
-    if "average" in data and "average_actual" in data:
-        embed.add_field(name="🎯 Average", value=f"{data['average']} (Current: {data['average_actual']})", inline=False)
-    if "checkout_pcnt" in data and "checkout_pcnt_actual" in data:
-        embed.add_field(name="✅ Checkout %", value=f"{data['checkout_pcnt']} (Current: {data['checkout_pcnt_actual']})", inline=False)
-    if "maximum_per_leg" in data and "maximum_per_leg_actual" in data:
-        embed.add_field(name="💥 Max per Leg", value=f"{data['maximum_per_leg']} (Current: {data['maximum_per_leg_actual']})", inline=False)
+    if "average" in data or "average_actual" in data:
+        average = data.get('average', 'N/A')
+        average_actual = data.get('average_actual', 'N/A')
+        embed.add_field(name="🎯 Average", value=f"{average} (Current: {average_actual})", inline=False)
+    if "checkout_pcnt" in data or "checkout_pcnt_actual" in data:
+        checkout_pcnt = data.get('checkout_pcnt', 'N/A')
+        checkout_pcnt_actual = data.get('checkout_pcnt_actual', 'N/A')
+        embed.add_field(name="✅ Checkout %", value=f"{checkout_pcnt} (Current: {checkout_pcnt_actual})", inline=False)
+    if "maximum_per_leg" in data or "maximum_per_leg_actual" in data:
+        maximum_per_leg = data.get('maximum_per_leg', 'N/A')
+        maximum_per_leg_actual = data.get('maximum_per_leg_actual', 'N/A')
+        embed.add_field(name="💥 Max per Leg", value=f"{maximum_per_leg} (Current: {maximum_per_leg_actual})", inline=False)
     if "maximums" in data:
         embed.add_field(name="🎲 Maximums celkem", value=data["maximums"], inline=True)
 
-    embed.set_footer(text="Statistiky poskytované vaším botem!")
+    embed.set_footer(text="Pro další informace použijte !help, nebo kontaktujte vývojáře.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
 
     return embed
@@ -98,12 +104,24 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
     
     if "rank" in player1_data and "rank" in player2_data:
         embed.add_field(name="🏆 Rank", value=f"{player1_data['rank']} 🆚 {player2_data['rank']}", inline=True)
-    if "average" in player1_data and "average_actual" in player1_data and "average" in player2_data and "average_actual" in player2_data:
-        embed.add_field(name="🎯 Average", value=f"{player1_data['average']} (Current: {player1_data['average_actual']}) 🆚 {player2_data['average']} (Current: {player2_data['average_actual']})", inline=False)
-    if "checkout_pcnt" in player1_data and "checkout_pcnt_actual" in player1_data and "checkout_pcnt" in player2_data and "checkout_pcnt_actual" in player2_data:
-        embed.add_field(name="✅ Checkout %", value=f"{player1_data['checkout_pcnt']} (Current: {player1_data['checkout_pcnt_actual']}) 🆚 {player2_data['checkout_pcnt']} (Current: {player2_data['checkout_pcnt_actual']})", inline=False)
-    if "maximum_per_leg" in player1_data and "maximum_per_leg_actual" in player1_data and "maximum_per_leg" in player2_data and "maximum_per_leg_actual" in player2_data:
-        embed.add_field(name="💥 Max per Leg", value=f"{player1_data['maximum_per_leg']} (Current: {player1_data['maximum_per_leg_actual']}) 🆚 {player2_data['maximum_per_leg']} (Current: {player2_data['maximum_per_leg_actual']})", inline=False)
+    if ("average" in player1_data or "average_actual" in player1_data) and ("average" in player2_data or "average_actual" in player2_data):
+        average1 = player1_data.get('average', 'N/A')
+        average_actual1 = player1_data.get('average_actual', 'N/A')
+        average2 = player2_data.get('average', 'N/A')
+        average_actual2 = player2_data.get('average_actual', 'N/A')
+        embed.add_field(name="🎯 Average", value=f"{average1} (Current: {average_actual1}) 🆚 {average2} (Current: {average_actual2})", inline=False)
+    if ("checkout_pcnt" in player1_data or "checkout_pcnt_actual" in player1_data) and ("checkout_pcnt" in player2_data or "checkout_pcnt_actual" in player2_data):
+        checkout_pcnt1 = player1_data.get('checkout_pcnt', 'N/A')
+        checkout_pcnt_actual1 = player1_data.get('checkout_pcnt_actual', 'N/A')
+        checkout_pcnt2 = player2_data.get('checkout_pcnt', 'N/A')
+        checkout_pcnt_actual2 = player2_data.get('checkout_pcnt_actual', 'N/A')
+        embed.add_field(name="✅ Checkout %", value=f"{checkout_pcnt1} (Current: {checkout_pcnt_actual1}) 🆚 {checkout_pcnt2} (Current: {checkout_pcnt_actual2})", inline=False)
+    if ("maximum_per_leg" in player1_data or "maximum_per_leg_actual" in player1_data) and ("maximum_per_leg" in player2_data or "maximum_per_leg_actual" in player2_data):
+        maximum_per_leg1 = player1_data.get('maximum_per_leg', 'N/A')
+        maximum_per_leg_actual1 = player1_data.get('maximum_per_leg_actual', 'N/A')
+        maximum_per_leg2 = player2_data.get('maximum_per_leg', 'N/A')
+        maximum_per_leg_actual2 = player2_data.get('maximum_per_leg_actual', 'N/A')
+        embed.add_field(name="💥 Max per Leg", value=f"{maximum_per_leg1} (Current: {maximum_per_leg_actual1}) 🆚 {maximum_per_leg2} (Current: {maximum_per_leg_actual2})", inline=False)
     if "maximums" in player1_data and "maximums" in player2_data:
         embed.add_field(name="🎲 Maximums celkem", value=f"{player1_data['maximums']} 🆚 {player2_data['maximums']}", inline=True)
 
