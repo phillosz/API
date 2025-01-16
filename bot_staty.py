@@ -65,7 +65,7 @@ async def fetch_player_data(player_name, date_from, date_to):
     # Fetch additional statistics
     additional_stats = await fetch_additional_stats(player_key)
     if additional_stats:
-        player_data[player_name].update(additional_stats)
+        player_data[player_name]['additional_stats'] = additional_stats
 
     # Další statistiky
     stats_urls = {
@@ -111,6 +111,12 @@ def create_embed(player_name, data, color, description):
     if "maximums" in data:
         embed.add_field(name="🎲 Maximums celkem", value=data["maximums"], inline=True)
 
+    # Add additional stats if available
+    if "additional_stats" in data:
+        additional_stats = data["additional_stats"]
+        for stat_name, stat_values in additional_stats.items():
+            embed.add_field(name=stat_name, value=", ".join(stat_values), inline=False)
+
     embed.set_footer(text="Pro další informace použijte !help, nebo kontaktujte vývojáře.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
 
@@ -143,6 +149,14 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
         embed.add_field(name="💥 Max per Leg", value=f"{maximum_per_leg1} (Current: {maximum_per_leg_actual1}) 🆚 {maximum_per_leg2} (Current: {maximum_per_leg_actual2})", inline=False)
     if "maximums" in player1_data and "maximums" in player2_data:
         embed.add_field(name="🎲 Maximums celkem", value=f"{player1_data['maximums']} 🆚 {player2_data['maximums']}", inline=True)
+
+    # Add additional stats if available
+    if "additional_stats" in player1_data and "additional_stats" in player2_data:
+        additional_stats1 = player1_data["additional_stats"]
+        additional_stats2 = player2_data["additional_stats"]
+        for stat_name in additional_stats1.keys():
+            if stat_name in additional_stats2:
+                embed.add_field(name=stat_name, value=f"{', '.join(additional_stats1[stat_name])} 🆚 {', '.join(additional_stats2[stat_name])}", inline=False)
 
     embed.set_footer(text="Statistiky poskytované vaším botem!")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")
