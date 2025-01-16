@@ -65,7 +65,7 @@ async def fetch_player_data(player_name, date_from, date_to):
     # Fetch additional statistics
     additional_stats = await fetch_additional_stats(player_key)
     if additional_stats:
-        player_data[player_name]['additional_stats'] = additional_stats
+        player_data[player_name].update(additional_stats)
 
     # Další statistiky
     stats_urls = {
