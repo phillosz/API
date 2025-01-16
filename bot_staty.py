@@ -86,7 +86,22 @@ async def fetch_player_data(player_name, date_from, date_to):
 
     return player_data[player_name]
 
+def fill_missing_current_stats(data):
+    if "additional_stats" not in data:
+        return
+
+    additional_stats = data["additional_stats"]
+
+    if "average_actual" not in data and "Averages" in additional_stats:
+        data["average_actual"] = additional_stats["Averages"][-1]
+    if "checkout_pcnt_actual" not in data and "Checkout Pcnt" in additional_stats:
+        data["checkout_pcnt_actual"] = additional_stats["Checkout Pcnt"][-1]
+    if "maximum_per_leg_actual" not in data and "180's per leg" in additional_stats:
+        data["maximum_per_leg_actual"] = additional_stats["180's per leg"][-1]
+
 def create_embed(player_name, data, color, description):
+    fill_missing_current_stats(data)
+
     embed = discord.Embed(
         title=f"Statistiky pro hráče {player_name}",
         description=description,
@@ -123,6 +138,9 @@ def create_embed(player_name, data, color, description):
     return embed
 
 def create_comparison_embed(player1_name, player1_data, player2_name, player2_data):
+    fill_missing_current_stats(player1_data)
+    fill_missing_current_stats(player2_data)
+
     embed = discord.Embed(title="Porovnání hráčů", color=discord.Color.purple())
     
     embed.add_field(name=f"{player1_name} 🆚 {player2_name}", value="\u200b", inline=False)
