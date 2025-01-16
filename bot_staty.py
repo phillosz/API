@@ -93,39 +93,33 @@ async def stats_command(ctx, player_name: str, date_from: str, date_to: str):
 
     await ctx.send(embed=embed)
 
-# Příkaz pro prémiové statistiky
-@bot.command(name="premium_stats")
-async def premium_stats_command(ctx, player_name: str, date_from: str, date_to: str):
-    if ctx.author.id not in PREMIUM_USERS:
-        await ctx.send("Tento příkaz je dostupný pouze pro prémiové uživatele.")
-        return
 
-    try:
-        datetime.strptime(date_from, "%Y-%m-%d")
-        datetime.strptime(date_to, "%Y-%m-%d")
-    except ValueError as e:
-        await ctx.send(f"Chyba ve formátu dat: {e}")
-        return
-
-    player_data = await fetch_player_data(player_name, date_from, date_to)
-    if not player_data:
-        await ctx.send(f"Data pro hráče {player_name} nebyla nalezena.")
-        return
-
+def create_premium_embed(player_name, data):
     embed = discord.Embed(
-        title=f"Prémiové statistiky pro hráče {player_data['player_name']}",
-        color=discord.Color.gold()
+        title=f"Statistiky pro hráče {player_name}",
+        description="Prémiové zobrazení statistik",
+        color=discord.Color.gold()  # Barva embedu
     )
-    embed.add_field(name="Rank", value=player_data.get("rank", "N/A"))
-    embed.add_field(name="Maximums", value=player_data.get("maximums", "N/A"))
-    embed.add_field(name="Average", value=player_data.get("average", "N/A"))
-    embed.add_field(name="Current Average", value=player_data.get("average_actual", "N/A"))
-    embed.add_field(name="Checkout %", value=player_data.get("checkout_pcnt", "N/A"))
-    embed.add_field(name="Current Checkout %", value=player_data.get("checkout_pcnt_actual", "N/A"))
-    embed.add_field(name="Maximums per Leg", value=player_data.get("maximum_per_leg", "N/A"))
-    embed.add_field(name="Current Maximums per Leg", value=player_data.get("maximum_per_leg_actual", "N/A"))
-    embed.add_field(name="Grafy", value="**Placeholder pro grafy** (bude přidáno později)")
 
+    # Přidáme dvojice statistik
+    embed.add_field(name="🏆 Rank", value=data["rank"], inline=True)
+    embed.add_field(name="🎯 Average", value=f"{data['average']} (Current: {data['average_actual']})", inline=False)
+    embed.add_field(name="✅ Checkout %", value=f"{data['checkout_pcnt']} (Current: {data['checkout_pcnt_actual']})", inline=False)
+    embed.add_field(name="💥 Max per Leg", value=f"{data['maximum_per_leg']} (Current: {data['maximum_per_leg_actual']})", inline=False)
+    embed.add_field(name="🎲 Maximums celkem", value=data["maximums"], inline=True)
+
+    embed.set_footer(text="Prémiové statistiky poskytované vaším botem!")
+    return embed
+
+# Příkaz pro prémiové statistiky
+@bot.command(name="premiumstats")
+async def premium_stats_command(ctx, player_name: str, date_from: str, date_to: str):
+    data = await fetch_player_data(player_name, date_from, date_to)
+    if isinstance(data, str):
+        await ctx.send(data)
+        return
+
+    embed = create_premium_embed(player_name, data)
     await ctx.send(embed=embed)
 
 # Testovací příkaz
