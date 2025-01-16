@@ -109,12 +109,13 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")
 
     # Generate graph
-    graph_url = generate_graph(player1_data, player2_data)
-    embed.set_image(url=graph_url)
+    graph_buf = generate_graph(player1_name, player1_data, player2_name, player2_data)
+    file = discord.File(graph_buf, filename="comparison.png")
+    embed.set_image(url="attachment://comparison.png")
 
     return embed
 
-def generate_graph(player1_data, player2_data):
+def generate_graph(player1_name, player1_data, player2_name, player2_data):
     labels = ['Rank', 'Average', 'Checkout %', 'Max per Leg', 'Maximums']
     player1_values = [
         player1_data.get('rank', 0),
@@ -146,8 +147,7 @@ def generate_graph(player1_data, player2_data):
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
-    file = discord.File(buf, filename="comparison.png")
-    return file
+    return buf
 
 # Příkaz pro základní statistiky
 @bot.command(name="stats")
@@ -223,7 +223,9 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
         return
 
     embed = create_comparison_embed(player1_name, player1_data, player2_name, player2_data)
-    await ctx.send(embed=embed)
+    graph_buf = generate_graph(player1_name, player1_data, player2_name, player2_data)
+    file = discord.File(graph_buf, filename="comparison.png")
+    await ctx.send(embed=embed, file=file)
 
 # Testovací příkaz
 @bot.command(name="ping")
