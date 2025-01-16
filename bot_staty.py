@@ -26,7 +26,17 @@ async def get_data(url):
 
 async def fetch_additional_stats(player_key):
     url = f"https://app.dartsorakel.com/api/tools/performancePortalPlayerData?playerId={player_key}"
-    return await get_data(url)
+    data = await get_data(url)
+    if not data:
+        return None
+
+    additional_stats = {}
+    for stat in data:
+        stat_name = stat[0]
+        stat_values = stat[1:]
+        additional_stats[stat_name] = stat_values
+
+    return additional_stats
 
 async def fetch_player_data(player_name, date_from, date_to):
     timestamp = int(datetime.now().timestamp() * 1000)
