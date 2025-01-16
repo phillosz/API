@@ -120,18 +120,18 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
 def generate_graph(player1_name, player1_data, player2_name, player2_data):
     labels = ['Rank', 'Average', 'Checkout %', 'Max per Leg', 'Maximums']
     player1_values = [
-        player1_data.get('rank', 0),
-        player1_data.get('average', 0),
-        player1_data.get('checkout_pcnt', 0),
-        player1_data.get('maximum_per_leg', 0),
-        player1_data.get('maximums', 0)
+        float(player1_data.get('rank', 0)),
+        float(player1_data.get('average', 0)),
+        float(player1_data.get('checkout_pcnt', 0)),
+        float(player1_data.get('maximum_per_leg', 0)),
+        float(player1_data.get('maximums', 0))
     ]
     player2_values = [
-        player2_data.get('rank', 0),
-        player2_data.get('average', 0),
-        player2_data.get('checkout_pcnt', 0),
-        player2_data.get('maximum_per_leg', 0),
-        player2_data.get('maximums', 0)
+        float(player2_data.get('rank', 0)),
+        float(player2_data.get('average', 0)),
+        float(player2_data.get('checkout_pcnt', 0)),
+        float(player2_data.get('maximum_per_leg', 0)),
+        float(player2_data.get('maximums', 0))
     ]
 
     x = range(len(labels))
