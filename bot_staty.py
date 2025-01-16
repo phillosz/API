@@ -235,4 +235,4 @@ async def ping_command(ctx):
     await ctx.send("Pong!")
 
 # Spuštění bota
-bot.run("YOUR_BOT_TOKEN_HERE")  # Replace with a secure way to load the token
+bot.run("MTMyNjkxMDY4MjA0NTc0MzE1NA.G4W2-Y.H4jux_lnuRTpkxDJrMXUMgNcQ7nqFkY7qPGZcs")  # Replace with a secure way to load the token
