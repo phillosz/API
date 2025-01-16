@@ -90,7 +90,7 @@ async def stats_command(ctx, player_name: str, date_from: str, date_to: str):
     await ctx.send(embed=result_embed)
 
 # Prémiový příkaz pro generování grafů
-premium_users = [1234567890]  # Nahraďte ID uživatelů prémiového přístupu
+premium_users = [586540043812864050]  # Nahraďte ID uživatelů prémiového přístupu
 
 @bot.command(name="premium_stats")
 async def premium_stats(ctx, player_name: str, date_from: str, date_to: str):
