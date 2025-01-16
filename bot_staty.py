@@ -3,6 +3,8 @@ import discord
 from discord.ext import commands
 import requests
 from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
+import io
 
 # Nastavení bota
 intents = discord.Intents.default()
@@ -87,6 +89,66 @@ def create_embed(player_name, data, color, description):
 
     return embed
 
+def create_comparison_embed(player1_name, player1_data, player2_name, player2_data):
+    embed = discord.Embed(title="Porovnání hráčů", color=discord.Color.purple())
+    
+    embed.add_field(name=f"{player1_name} 🆚 {player2_name}", value="\u200b", inline=False)
+    
+    if "rank" in player1_data and "rank" in player2_data:
+        embed.add_field(name="🏆 Rank", value=f"{player1_data['rank']} 🆚 {player2_data['rank']}", inline=True)
+    if "average" in player1_data and "average_actual" in player1_data and "average" in player2_data and "average_actual" in player2_data:
+        embed.add_field(name="🎯 Average", value=f"{player1_data['average']} (Current: {player1_data['average_actual']}) 🆚 {player2_data['average']} (Current: {player2_data['average_actual']})", inline=False)
+    if "checkout_pcnt" in player1_data and "checkout_pcnt_actual" in player1_data and "checkout_pcnt" in player2_data and "checkout_pcnt_actual" in player2_data:
+        embed.add_field(name="✅ Checkout %", value=f"{player1_data['checkout_pcnt']} (Current: {player1_data['checkout_pcnt_actual']}) 🆚 {player2_data['checkout_pcnt']} (Current: {player2_data['checkout_pcnt_actual']})", inline=False)
+    if "maximum_per_leg" in player1_data and "maximum_per_leg_actual" in player1_data and "maximum_per_leg" in player2_data and "maximum_per_leg_actual" in player2_data:
+        embed.add_field(name="💥 Max per Leg", value=f"{player1_data['maximum_per_leg']} (Current: {player1_data['maximum_per_leg_actual']}) 🆚 {player2_data['maximum_per_leg']} (Current: {player2_data['maximum_per_leg_actual']})", inline=False)
+    if "maximums" in player1_data and "maximums" in player2_data:
+        embed.add_field(name="🎲 Maximums celkem", value=f"{player1_data['maximums']} 🆚 {player2_data['maximums']}", inline=True)
+
+    embed.set_footer(text="Statistiky poskytované vaším botem!")
+    embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")
+
+    # Generate graph
+    graph_url = generate_graph(player1_data, player2_data)
+    embed.set_image(url=graph_url)
+
+    return embed
+
+def generate_graph(player1_data, player2_data):
+    labels = ['Rank', 'Average', 'Checkout %', 'Max per Leg', 'Maximums']
+    player1_values = [
+        player1_data.get('rank', 0),
+        player1_data.get('average', 0),
+        player1_data.get('checkout_pcnt', 0),
+        player1_data.get('maximum_per_leg', 0),
+        player1_data.get('maximums', 0)
+    ]
+    player2_values = [
+        player2_data.get('rank', 0),
+        player2_data.get('average', 0),
+        player2_data.get('checkout_pcnt', 0),
+        player2_data.get('maximum_per_leg', 0),
+        player2_data.get('maximums', 0)
+    ]
+
+    x = range(len(labels))
+
+    fig, ax = plt.subplots()
+    ax.bar(x, player1_values, width=0.4, label=player1_name, align='center')
+    ax.bar(x, player2_values, width=0.4, label=player2_name, align='edge')
+
+    ax.set_ylabel('Values')
+    ax.set_title('Player Comparison')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend()
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    file = discord.File(buf, filename="comparison.png")
+    return file
+
 # Příkaz pro základní statistiky
 @bot.command(name="stats")
 async def stats_command(ctx, player_name: str, date_from: str = None, date_to: str = None):
@@ -134,6 +196,33 @@ async def premium_stats_command(ctx, player_name: str, date_from: str = None, da
         return
 
     embed = create_premium_embed(player_name, player_data)
+    await ctx.send(embed=embed)
+
+@bot.command(name="compare")
+async def compare_command(ctx, player1_name: str, player2_name: str, date_from: str = None, date_to: str = None):
+    if date_from is None:
+        date_from = (datetime.now() - timedelta(days=80)).strftime("%Y-%m-%d")
+    if date_to is None:
+        date_to = datetime.now().strftime("%Y-%m-%d")
+
+    try:
+        datetime.strptime(date_from, "%Y-%m-%d")
+        datetime.strptime(date_to, "%Y-%m-%d")
+    except ValueError as e:
+        await ctx.send(f"Chyba ve formátu dat: {e}")
+        return
+
+    player1_data = await fetch_player_data(player1_name, date_from, date_to)
+    player2_data = await fetch_player_data(player2_name, date_from, date_to)
+    
+    if not player1_data:
+        await ctx.send(f"Data pro hráče {player1_name} nebyla nalezena.")
+        return
+    if not player2_data:
+        await ctx.send(f"Data pro hráče {player2_name} nebyla nalezena.")
+        return
+
+    embed = create_comparison_embed(player1_name, player1_data, player2_name, player2_data)
     await ctx.send(embed=embed)
 
 # Testovací příkaz
