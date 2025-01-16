@@ -71,13 +71,20 @@ def create_embed(player_name, data, color, description):
     )
 
     # Přidáme dvojice statistik
-    embed.add_field(name="🏆 Rank", value=data["rank"], inline=True)
-    embed.add_field(name="🎯 Average", value=f"{data['average']} (Current: {data['average_actual']})", inline=False)
-    embed.add_field(name="✅ Checkout %", value=f"{data['checkout_pcnt']} (Current: {data['checkout_pcnt_actual']})", inline=False)
-    embed.add_field(name="💥 Max per Leg", value=f"{data['maximum_per_leg']} (Current: {data['maximum_per_leg_actual']})", inline=False)
-    embed.add_field(name="🎲 Maximums celkem", value=data["maximums"], inline=True)
+    if "rank" in data:
+        embed.add_field(name="🏆 Rank", value=data["rank"], inline=True)
+    if "average" in data and "average_actual" in data:
+        embed.add_field(name="🎯 Average", value=f"{data['average']} (Current: {data['average_actual']})", inline=False)
+    if "checkout_pcnt" in data and "checkout_pcnt_actual" in data:
+        embed.add_field(name="✅ Checkout %", value=f"{data['checkout_pcnt']} (Current: {data['checkout_pcnt_actual']})", inline=False)
+    if "maximum_per_leg" in data and "maximum_per_leg_actual" in data:
+        embed.add_field(name="💥 Max per Leg", value=f"{data['maximum_per_leg']} (Current: {data['maximum_per_leg_actual']})", inline=False)
+    if "maximums" in data:
+        embed.add_field(name="🎲 Maximums celkem", value=data["maximums"], inline=True)
 
     embed.set_footer(text="Statistiky poskytované vaším botem!")
+    embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&dl=0")  # Add a relevant thumbnail URL
+
     return embed
 
 # Příkaz pro základní statistiky
