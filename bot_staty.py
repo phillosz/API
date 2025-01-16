@@ -2,7 +2,7 @@ from aiocache import cached, SimpleMemoryCache
 import discord
 from discord.ext import commands
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Nastavení bota
 intents = discord.Intents.default()
@@ -89,7 +89,12 @@ def create_embed(player_name, data, color, description):
 
 # Příkaz pro základní statistiky
 @bot.command(name="stats")
-async def stats_command(ctx, player_name: str, date_from: str, date_to: str):
+async def stats_command(ctx, player_name: str, date_from: str = None, date_to: str = None):
+    if date_from is None:
+        date_from = (datetime.now() - timedelta(days=80)).strftime("%Y-%m-%d")
+    if date_to is None:
+        date_to = datetime.now().strftime("%Y-%m-%d")
+
     try:
         datetime.strptime(date_from, "%Y-%m-%d")
         datetime.strptime(date_to, "%Y-%m-%d")
@@ -110,7 +115,12 @@ def create_premium_embed(player_name, data):
 
 # Příkaz pro prémiové statistiky
 @bot.command(name="premiumstats")
-async def premium_stats_command(ctx, player_name: str, date_from: str, date_to: str):
+async def premium_stats_command(ctx, player_name: str, date_from: str = None, date_to: str = None):
+    if date_from is None:
+        date_from = (datetime.now() - timedelta(days=80)).strftime("%Y-%m-%d")
+    if date_to is None:
+        date_to = datetime.now().strftime("%Y-%m-%d")
+
     try:
         datetime.strptime(date_from, "%Y-%m-%d")
         datetime.strptime(date_to, "%Y-%m-%d")
