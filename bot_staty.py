@@ -332,5 +332,11 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
 async def ping_command(ctx):
     await ctx.send("Pong!")
 
+@bot.command(name="shutdown")
+@commands.is_owner()
+async def shutdown(ctx):
+    await ctx.send("Shutting down...")
+    await bot.close()
+
 # Spuštění bota
 bot.run("MTMyNjkxMDY4MjA0NTc0MzE1NA.G4W2-Y.H4jux_lnuRTpkxDJrMXUMgNcQ7nqFkY7qPGZcs")  # Replace with a secure way to load the token
