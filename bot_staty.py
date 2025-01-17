@@ -289,7 +289,6 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
     embed = create_comparison_embed(player1_name, player1_data, player2_name, player2_data)
     await ctx.send(embed=embed)
 
-@cached(cache=TTLCache(maxsize=100, ttl=3600))
 async def get_tournaments():
     url = "https://api.assendelftmedia.nl/api/events?status%5B%5D=inprogress&status%5B%5D=scheduled&order_by=start_date&order_dir=asc"
     async with aiohttp.ClientSession() as session:
@@ -298,7 +297,6 @@ async def get_tournaments():
                 return await response.json()
     return None
 
-@cached(cache=TTLCache(maxsize=100, ttl=3600))
 async def get_matches(tournament_id):
     url = f"https://api.assendelftmedia.nl/api/games?event_id={tournament_id}"
     async with aiohttp.ClientSession() as session:
