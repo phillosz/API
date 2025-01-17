@@ -369,7 +369,7 @@ async def tournaments(ctx, tournament_name: str = None):
         await ctx.send("Unable to fetch matches data.")
         return
     
-    matches = matches_response.get('data', [])
+    matches = matches_response  # Directly use the response as a list
     output = [f"Tournament: {tournament_name}"]
     scheduled_matches = [match for match in matches if match['status'] == 'scheduled']
     played_matches = [match for match in matches if match['status'] == 'inprogress']
