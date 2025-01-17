@@ -30,17 +30,25 @@ class TestFetchPlayerData(unittest.IsolatedAsyncioTestCase):
             }
         ]
 
-        date_from = "2023-01-01"
-        date_to = "2023-12-31"
         player_name = "Test Player"
+        date_from = "2025-01-01"
+        date_to = "2025-01-10"
 
         player_data = await fetch_player_data(player_name, date_from, date_to)
+        expected_data = [
+            {
+                "player_name": "Test Player",
+                "player_key": "12345",
+                "rank": 1,
+                "stat": 100
+            },
+            {
+                "player_name": "Test Player",
+                "stat": 50
+            }
+        ]
 
-        self.assertIsNotNone(player_data)
-        self.assertEqual(player_data['player_name'], "Test Player")
-        self.assertEqual(player_data['rank'], 1)
-        self.assertEqual(player_data['maximums'], 100)
-        self.assertEqual(player_data['average'], 50)
+        self.assertEqual(player_data, expected_data)
 
 class TestFetchAdditionalStats(unittest.IsolatedAsyncioTestCase):
 
