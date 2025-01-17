@@ -328,19 +328,35 @@ async def tournament_command(ctx, tournament_name: str):
         return
     
     matches = matches_response  # Directly use the response as a list
-    output = [f"Tournament: {tournament_name}"]
+    embed = discord.Embed(
+        title=f"Tournament: {tournament_name}",
+        description="",
+        color=discord.Color.blue()  # Set the color of the embed
+    )
+    
     scheduled_matches = [match for match in matches if match['status'] == 0]
     played_matches = [match for match in matches if match['status'] == 4]
     
-    output.append("Scheduled Matches:")
+    embed.add_field(name="Scheduled Matches", value="\u200b", inline=False)
     for match in scheduled_matches:
-        output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['game_time']}")
+        embed.add_field(
+            name=f"{match['players'][0]['name']} vs {match['players'][1]['name']}",
+            value=f"At {match['game_time']}",
+            inline=False
+        )
     
-    output.append("Played Matches:")
+    embed.add_field(name="Played Matches", value="\u200b", inline=False)
     for match in played_matches:
-        output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['game_time']}")
+        embed.add_field(
+            name=f"{match['players'][0]['name']} vs {match['players'][1]['name']}",
+            value=f"At {match['game_time']}",
+            inline=False
+        )
     
-    await ctx.send("\n".join(output))
+    embed.set_footer(text="Pro další informace použijte !help, nebo kontaktujte vývojáře.")
+    embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
+    
+    await ctx.send(embed=embed)
 
 # Testovací příkaz
 @bot.command(name="ping")
