@@ -309,7 +309,7 @@ async def get_matches(tournament_id):
 
 @bot.command(name="tournament")
 async def tournament_command(ctx, tournament_name: str):
-    tournaments_response = get_tournaments()
+    tournaments_response = await get_tournaments()  # Add await here
     if not tournaments_response:
         await ctx.send("Unable to fetch tournaments data.")
         return
@@ -329,7 +329,7 @@ async def tournament_command(ctx, tournament_name: str):
         await ctx.send("Unable to fetch matches data.")
         return
     
-    matches = matches_response  # Directly use the response as a list
+    matches = matches_response.get("data", [])  # Ensure we access the correct key
     output = [f"Tournament: {tournament_name}"]
     scheduled_matches = [match for match in matches if match['status'] == 'scheduled']
     played_matches = [match for match in matches if match['status'] == 'inprogress']
