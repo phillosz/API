@@ -5,6 +5,7 @@ import io
 from aiocache import cached, SimpleMemoryCache
 import aiohttp  # Add this import for asynchronous HTTP requests
 import json  # Add this import for JSON handling
+from cachetools import cached, TTLCache
 
 # Nastavení bota
 intents = discord.Intents.default()
@@ -328,7 +329,7 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
     embed = create_comparison_embed(player1_name, player1_data, player2_name, player2_data)
     await ctx.send(embed=embed)
 
-@cached(ttl=3600, cache=SimpleMemoryCache)
+@cached(cache=TTLCache(maxsize=100, ttl=3600))
 async def get_tournaments():
     url = "https://api.assendelftmedia.nl/api/events?status%5B%5D=inprogress&status%5B%5D=scheduled&order_by=start_date&order_dir=asc"
     async with aiohttp.ClientSession() as session:
@@ -337,7 +338,7 @@ async def get_tournaments():
                 return await response.json()
     return None
 
-@cached(ttl=3600, cache=SimpleMemoryCache)
+@cached(cache=TTLCache(maxsize=100, ttl=3600))
 async def get_matches(tournament_id):
     url = f"https://api.assendelftmedia.nl/api/games?event_id={tournament_id}"
     async with aiohttp.ClientSession() as session:
@@ -346,17 +347,16 @@ async def get_matches(tournament_id):
                 return await response.json()
     return None
 
-@bot.command()
-async def tournaments(ctx, tournament_name: str = None):
+@bot.command(name="tournament")
+async def tournament_command(ctx, tournament_name: str):
     tournaments_response = await get_tournaments()
     if not tournaments_response:
         await ctx.send("Unable to fetch tournaments data.")
         return
     
-    tournaments = tournaments_response.get('data', [])
     tournament_id = None
-    for tournament in tournaments:
-        if tournament_name and tournament['name'].lower() == tournament_name.lower():
+    for tournament in tournaments_response:
+        if tournament['name'].lower() == tournament_name.lower():
             tournament_id = tournament['id']
             break
     
@@ -371,16 +371,16 @@ async def tournaments(ctx, tournament_name: str = None):
     
     matches = matches_response  # Directly use the response as a list
     output = [f"Tournament: {tournament_name}"]
-    scheduled_matches = [match for match in matches if match['status'] == 'scheduled']
-    played_matches = [match for match in matches if match['status'] == 'inprogress']
+    scheduled_matches = [match for match in matches if match['status'] == 0]
+    played_matches = [match for match in matches if match['status'] == 4]
     
     output.append("Scheduled Matches:")
     for match in scheduled_matches:
-        output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['start_date']}")
+        output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['game_time']}")
     
     output.append("Played Matches:")
     for match in played_matches:
-        output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['start_date']}")
+        output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['game_time']}")
     
     await ctx.send("\n".join(output))
 
