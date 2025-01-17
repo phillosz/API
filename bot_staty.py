@@ -306,7 +306,7 @@ async def get_matches(tournament_id):
     return None
 
 @bot.command(name="tournament")
-async def tournament_command(ctx, tournament_name: str):
+async def tournament_command(ctx, tournament_name: str, player1_name: str = None, player2_name: str = None):
     tournaments_response = await get_tournaments()
     if not tournaments_response:
         await ctx.send("Unable to fetch tournaments data.")
@@ -333,6 +333,32 @@ async def tournament_command(ctx, tournament_name: str):
         description="",
         color=discord.Color.blue()  # Set the color of the embed
     )
+    
+    if player1_name and player2_name:
+        for match in matches:
+            players = match['players']
+            if (players[0]['name'].lower() == player1_name.lower() and players[1]['name'].lower() == player2_name.lower()) or \
+               (players[0]['name'].lower() == player2_name.lower() and players[1]['name'].lower() == player1_name.lower()):
+                embed.title = f"Match: {players[0]['name']} vs {players[1]['name']}"
+                embed.add_field(name="Game Time", value=match['game_time'], inline=False)
+                for player in players:
+                    stats = player['game_stats']['stats']
+                    embed.add_field(
+                        name=player['name'],
+                        value=(
+                            f"Three Dart Average: {stats['three_dart_average']}\n"
+                            f"100+ Thrown: {stats['100_plus_thrown']}\n"
+                            f"140+ Thrown: {stats['140_plus_thrown']}\n"
+                            f"180+ Thrown: {stats['180_plus_thrown']}\n"
+                            f"Highest Checkout: {stats['highest_checkout']}\n"
+                            f"Checkout Percentage: {stats['checkout_percentage']}%\n"
+                            f"Checkouts Made: {stats['checkouts_made']}\n"
+                            f"Checkouts Total: {stats['checkout_total']}"
+                        ),
+                        inline=False
+                    )
+                await ctx.send(embed=embed)
+                return
     
     scheduled_matches = [match for match in matches if match['status'] == 0]
     played_matches = [match for match in matches if match['status'] == 4]
