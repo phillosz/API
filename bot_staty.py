@@ -337,6 +337,15 @@ async def get_tournaments():
                 return await response.json()
     return None
 
+@cached(ttl=3600, cache=SimpleMemoryCache)
+async def get_matches(tournament_id):
+    url = f"https://api.assendelftmedia.nl/api/games?event_id={tournament_id}"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                return await response.json()
+    return None
+
 @bot.command()
 async def tournaments(ctx, tournament_name: str = None):
     tournaments_response = await get_tournaments()
@@ -345,29 +354,35 @@ async def tournaments(ctx, tournament_name: str = None):
         return
     
     tournaments = tournaments_response.get('data', [])
-    output = []
+    tournament_id = None
     for tournament in tournaments:
-        if tournament_name and tournament['name'].lower() != tournament_name.lower():
-            continue
-        
-        matches = tournament.get('matches', [])
-        scheduled_matches = [match for match in matches if match['status'] == 'scheduled']
-        played_matches = [match for match in matches if match['status'] == 'inprogress']
-        
-        output.append(f"Tournament: {tournament['name']}")
-        output.append("Scheduled Matches:")
-        for match in scheduled_matches:
-            output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['start_date']}")
-        
-        output.append("Played Matches:")
-        for match in played_matches:
-            output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['start_date']}")
-        output.append("")  # Add a blank line between tournaments
+        if tournament_name and tournament['name'].lower() == tournament_name.lower():
+            tournament_id = tournament['id']
+            break
     
-    if not output:
+    if not tournament_id:
         await ctx.send(f"Tournament '{tournament_name}' not found.")
-    else:
-        await ctx.send("\n".join(output))
+        return
+    
+    matches_response = await get_matches(tournament_id)
+    if not matches_response:
+        await ctx.send("Unable to fetch matches data.")
+        return
+    
+    matches = matches_response.get('data', [])
+    output = [f"Tournament: {tournament_name}"]
+    scheduled_matches = [match for match in matches if match['status'] == 'scheduled']
+    played_matches = [match for match in matches if match['status'] == 'inprogress']
+    
+    output.append("Scheduled Matches:")
+    for match in scheduled_matches:
+        output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['start_date']}")
+    
+    output.append("Played Matches:")
+    for match in played_matches:
+        output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['start_date']}")
+    
+    await ctx.send("\n".join(output))
 
 # Testovací příkaz
 @bot.command(name="ping")
