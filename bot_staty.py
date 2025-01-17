@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands
 import requests
 from datetime import datetime, timedelta
+import logging
 
 # Nastavení bota
 intents = discord.Intents.default()
@@ -20,15 +21,20 @@ async def get_data(url):
         return response.json()
     return None
 
+logging.basicConfig(level=logging.DEBUG)
+
 async def fetch_player_data(player_name, date_from, date_to):
     timestamp = int(datetime.now().timestamp() * 1000)
     
     base_url = f"https://app.dartsorakel.com/api/stats/player?dateFrom={date_from}&dateTo={date_to}&rankKey=26&organStat=All&tourns=All&minMatches=200&tourCardYear=&showStatsBreakdown=0&_={timestamp}"
+    logging.debug(f"Fetching data from URL: {base_url}")
     url_response = await get_data(base_url)
     if not url_response:
+        logging.debug("No response from API")
         return None
 
     data = url_response.get("data", [])
+    logging.debug(f"Data received: {data}")
     player_data = {}
 
     for player in data:
@@ -40,6 +46,7 @@ async def fetch_player_data(player_name, date_from, date_to):
         }
 
     if player_name not in player_data:
+        logging.debug(f"Player {player_name} not found in data")
         return None
 
     player_key = player_data[player_name]["player_key"]
@@ -55,12 +62,14 @@ async def fetch_player_data(player_name, date_from, date_to):
     }
 
     for stat_name, url in stats_urls.items():
+        logging.debug(f"Fetching {stat_name} data from URL: {url}")
         stat_data = await get_data(url)
         if stat_data:
             for player in stat_data.get("data", []):
                 if player['player_name'] == player_name:
                     player_data[player_name][stat_name] = player["stat"]
 
+    logging.debug(f"Final player data: {player_data[player_name]}")
     return player_data[player_name]
 
 def create_embed(player_name, data, color, description):
