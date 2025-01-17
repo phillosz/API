@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import io
 from aiocache import cached, SimpleMemoryCache
 import aiohttp  # Add this import for asynchronous HTTP requests
+import json  # Add this import for JSON handling
 
 # Nastavení bota
 intents = discord.Intents.default()
@@ -326,6 +327,35 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
 
     embed = create_comparison_embed(player1_name, player1_data, player2_name, player2_data)
     await ctx.send(embed=embed)
+
+@bot.command()
+async def tournaments(ctx, tournament_name: str = None):
+    with open('/Users/filiptichy/API/DartsNews Data/all_tournaments-29-6.txt', 'r') as f:
+        tournaments = json.load(f)
+    
+    output = []
+    for tournament in tournaments:
+        if tournament_name and tournament['name'].lower() != tournament_name.lower():
+            continue
+        
+        matches = tournament['matches']
+        scheduled_matches = [match for match in matches if match['status'] == 0]
+        played_matches = [match for match in matches if match['status'] == 4]
+        
+        output.append(f"Tournament: {tournament['name']}")
+        output.append("Scheduled Matches:")
+        for match in scheduled_matches:
+            output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['game_time']}")
+        
+        output.append("Played Matches:")
+        for match in played_matches:
+            output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['game_time']}")
+        output.append("")  # Add a blank line between tournaments
+    
+    if not output:
+        await ctx.send(f"Tournament '{tournament_name}' not found.")
+    else:
+        await ctx.send("\n".join(output))
 
 # Testovací příkaz
 @bot.command(name="ping")
