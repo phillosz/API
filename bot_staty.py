@@ -351,17 +351,17 @@ async def tournaments(ctx, tournament_name: str = None):
             continue
         
         matches = tournament.get('matches', [])
-        scheduled_matches = [match for match in matches if match['status'] == 0]
-        played_matches = [match for match in matches if match['status'] == 4]
+        scheduled_matches = [match for match in matches if match['status'] == 'scheduled']
+        played_matches = [match for match in matches if match['status'] == 'inprogress']
         
         output.append(f"Tournament: {tournament['name']}")
         output.append("Scheduled Matches:")
         for match in scheduled_matches:
-            output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['game_time']}")
+            output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['start_date']}")
         
         output.append("Played Matches:")
         for match in played_matches:
-            output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['game_time']}")
+            output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['start_date']}")
         output.append("")  # Add a blank line between tournaments
     
     if not output:
