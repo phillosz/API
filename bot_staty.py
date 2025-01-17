@@ -309,7 +309,7 @@ async def get_matches(tournament_id):
 
 @bot.command(name="tournament")
 async def tournament_command(ctx, tournament_name: str):
-    tournaments_response = await get_tournaments()
+    tournaments_response = get_tournaments()
     if not tournaments_response:
         await ctx.send("Unable to fetch tournaments data.")
         return
