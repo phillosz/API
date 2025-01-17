@@ -309,13 +309,13 @@ async def get_matches(tournament_id):
 
 @bot.command(name="tournament")
 async def tournament_command(ctx, tournament_name: str):
-    tournaments_response = await get_tournaments()  # Add await here
+    tournaments_response = await get_tournaments()
     if not tournaments_response:
         await ctx.send("Unable to fetch tournaments data.")
         return
     
     tournament_id = None
-    for tournament in tournaments_response:
+    for tournament in tournaments_response.get("data", []):  # Ensure we access the correct key
         if tournament['name'].lower() == tournament_name.lower():
             tournament_id = tournament['id']
             break
