@@ -328,10 +328,21 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
     embed = create_comparison_embed(player1_name, player1_data, player2_name, player2_data)
     await ctx.send(embed=embed)
 
+@cached(ttl=3600, cache=SimpleMemoryCache)
+async def get_tournaments():
+    url = "https://api.assendelftmedia.nl/api/events?status%5B%5D=inprogress&status%5B%5D=scheduled&order_by=start_date&order_dir=asc"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                return await response.json()
+    return None
+
 @bot.command()
 async def tournaments(ctx, tournament_name: str = None):
-    with open('/Users/filiptichy/API/DartsNews Data/all_tournaments-29-6.txt', 'r') as f:
-        tournaments = json.load(f)
+    tournaments = await get_tournaments()
+    if not tournaments:
+        await ctx.send("Unable to fetch tournaments data.")
+        return
     
     output = []
     for tournament in tournaments:
