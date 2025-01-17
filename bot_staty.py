@@ -16,7 +16,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 PREMIUM_USERS = {586540043812864050}  # Změň na své ID
 
 # Funkce pro získání dat z API (s cache)
-@cached(ttl=3600, cache=SimpleMemoryCache)
+@cached(cache=TTLCache(maxsize=100, ttl=3600))
 async def get_data(url):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
