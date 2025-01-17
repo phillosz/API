@@ -239,46 +239,6 @@ async def stats_command(ctx, player_name: str, date_from: str = None, date_to: s
     embed = create_embed(player_name, player_data, discord.Color.blue(), "Základní zobrazení statistik")
     await ctx.send(embed=embed)
 
-def create_premium_embed(player_name, data):
-    fill_missing_stats(data)
-
-    embed = discord.Embed(
-        title=f"Prémiové statistiky pro hráče {player_name}",
-        description="Prémiové zobrazení statistik",
-        color=discord.Color.gold()  # Barva embedu
-    )
-
-    # Přidáme dvojice statistik
-    if "rank" in data:
-        embed.add_field(name="🏆 Rank", value=data["rank"], inline=True)
-    if "average" in data or "average_actual" in data:
-        average = data.get('average', 'N/A')
-        average_actual = data.get('average_actual', 'N/A')
-        embed.add_field(name="🎯 Average", value=f"{average} (Current: {average_actual})", inline=False)
-    if "checkout_pcnt" in data or "checkout_pcnt_actual" in data:
-        checkout_pcnt = data.get('checkout_pcnt', 'N/A')
-        checkout_pcnt_actual = data.get('checkout_pcnt_actual', 'N/A')
-        embed.add_field(name="✅ Checkout %", value=f"{checkout_pcnt} (Current: {checkout_pcnt_actual})", inline=False)
-    if "maximum_per_leg" in data or "maximum_per_leg_actual" in data:
-        maximum_per_leg = data.get('maximum_per_leg', 'N/A')
-        maximum_per_leg_actual = data.get('maximum_per_leg_actual', 'N/A')
-        embed.add_field(name="💥 Max per Leg", value=f"{maximum_per_leg} (Current: {maximum_per_leg_actual})", inline=False)
-    if "maximums" in data:
-        embed.add_field(name="🎲 Maximums celkem", value=data["maximums"], inline=True)
-
-    # Add additional stats if available
-    if "additional_stats" in data:
-        additional_stats = data["additional_stats"]
-        for stat_name, stat_values in additional_stats.items():
-            # Convert None values to empty strings
-            stat_values = [str(value) if value is not None else '' for value in stat_values]
-            embed.add_field(name=stat_name, value=", ".join(stat_values), inline=False)
-
-    embed.set_footer(text="Pro další informace použijte !help, nebo kontaktujte vývojáře.")
-    embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
-
-    return embed
-
 # Příkaz pro prémiové statistiky
 @bot.command(name="premiumstats")
 async def premium_stats_command(ctx, player_name: str, date_from: str = None, date_to: str = None):
