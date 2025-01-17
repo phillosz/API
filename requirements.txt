@@ -4,3 +4,4 @@ flask
 schedule
 matplotlib
 aiocache
+cachetools
