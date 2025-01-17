@@ -339,17 +339,18 @@ async def get_tournaments():
 
 @bot.command()
 async def tournaments(ctx, tournament_name: str = None):
-    tournaments = await get_tournaments()
-    if not tournaments:
+    tournaments_response = await get_tournaments()
+    if not tournaments_response:
         await ctx.send("Unable to fetch tournaments data.")
         return
     
+    tournaments = tournaments_response.get('data', [])
     output = []
     for tournament in tournaments:
         if tournament_name and tournament['name'].lower() != tournament_name.lower():
             continue
         
-        matches = tournament['matches']
+        matches = tournament.get('matches', [])
         scheduled_matches = [match for match in matches if match['status'] == 0]
         played_matches = [match for match in matches if match['status'] == 4]
         
