@@ -346,6 +346,7 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
                     embed.add_field(
                         name=player['name'],
                         value=(
+                            f"Legs Won: {player['game_stats']['legs_won']}\n"
                             f"Three Dart Average: {stats['three_dart_average']}\n"
                             f"100+ Thrown: {stats['100_plus_thrown']}\n"
                             f"140+ Thrown: {stats['140_plus_thrown']}\n"
