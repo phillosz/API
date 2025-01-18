@@ -24,21 +24,6 @@ async def get_data(url):
                 return await response.json()
     return None
 
-@cached(cache=TTLCache(maxsize=100, ttl=3600))
-async def get_tournaments():
-    url = "https://api.assendelftmedia.nl/api/events?status%5B%5D=inprogress&status%5B%5D=scheduled&order_by=start_date&order_dir=asc"
-    return await get_data(url)
-
-@cached(cache=TTLCache(maxsize=100, ttl=3600))
-async def get_completed_tournaments():
-    url = "https://api.assendelftmedia.nl/api/events?status%5B%5D=completed&order_by=end_date&order_dir=desc"
-    return await get_data(url)
-
-@cached(cache=TTLCache(maxsize=100, ttl=3600))
-async def get_matches(tournament_id):
-    url = f"https://api.assendelftmedia.nl/api/games?event_id={tournament_id}"
-    return await get_data(url)
-
 async def fetch_additional_stats(player_key):
     url = f"https://app.dartsorakel.com/api/tools/performancePortalPlayerData?playerId={player_key}"
     data = await get_data(url)
@@ -304,6 +289,22 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
     embed = create_comparison_embed(player1_name, player1_data, player2_name, player2_data)
     await ctx.send(embed=embed)
 
+async def get_tournaments():
+    url = "https://api.assendelftmedia.nl/api/events?status%5B%5D=inprogress&status%5B%5D=scheduled&order_by=start_date&order_dir=asc"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                return await response.json()
+    return None
+
+async def get_matches(tournament_id):
+    url = f"https://api.assendelftmedia.nl/api/games?event_id={tournament_id}"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                return await response.json()
+    return None
+
 @bot.command(name="tournament")
 async def tournament_command(ctx, tournament_name: str, player1_name: str = None, player2_name: str = None):
     tournaments_response = await get_tournaments()
@@ -312,21 +313,10 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
         return
     
     tournament_id = None
-    for tournament in tournaments_response.get("data", []):
+    for tournament in tournaments_response.get("data", []):  # Ensure we access the correct key
         if tournament['name'].lower() == tournament_name.lower():
             tournament_id = tournament['id']
             break
-    
-    if not tournament_id:
-        completed_tournaments_response = await get_completed_tournaments()
-        if not completed_tournaments_response:
-            await ctx.send("Unable to fetch completed tournaments data.")
-            return
-        
-        for tournament in completed_tournaments_response.get("data", []):
-            if tournament['name'].lower() == tournament_name.lower():
-                tournament_id = tournament['id']
-                break
     
     if not tournament_id:
         await ctx.send(f"Tournament '{tournament_name}' not found.")
@@ -337,23 +327,63 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
         await ctx.send("Unable to fetch matches data.")
         return
     
-    matches = matches_response.get("data", [])  # Directly use the response as a list
-    matches.sort(key=lambda x: x['game_time'])  # Sort matches by game_time
-
-    output = [f"Tournament: {tournament_name}"]
-    current_date = None
-
-    for match in matches:
-        match_date = match['game_time'].split('T')[0]
-        if match_date != current_date:
-            if current_date is not None:
-                output.append("\n")  # Add a break between days
-            current_date = match_date
-            output.append(f"Date: {current_date}")
-        
-        output.append(f"  - {match['players'][0]['name']} vs {match['players'][1]['name']} at {match['game_time']}")
-
-    await ctx.send("\n".join(output))
+    matches = matches_response  # Directly use the response as a list
+    embed = discord.Embed(
+        title=f"Tournament: {tournament_name}",
+        description="",
+        color=discord.Color.blue()  # Set the color of the embed
+    )
+    
+    if player1_name and player2_name:
+        for match in matches:
+            players = match['players']
+            if (players[0]['name'].lower() == player1_name.lower() and players[1]['name'].lower() == player2_name.lower()) or \
+               (players[0]['name'].lower() == player2_name.lower() and players[1]['name'].lower() == player1_name.lower()):
+                embed.title = f"Match: {players[0]['name']} vs {players[1]['name']}"
+                embed.add_field(name="Game Time", value=match['game_time'], inline=False)
+                for player in players:
+                    stats = player['game_stats']['stats']
+                    embed.add_field(
+                        name=player['name'],
+                        value=(
+                            f"Legs Won: {player['game_stats']['legs_won']}\n"
+                            f"Three Dart Average: {stats['three_dart_average']}\n"
+                            f"100+ Thrown: {stats['100_plus_thrown']}\n"
+                            f"140+ Thrown: {stats['140_plus_thrown']}\n"
+                            f"180+ Thrown: {stats['180_plus_thrown']}\n"
+                            f"Highest Checkout: {stats['highest_checkout']}\n"
+                            f"Checkout Percentage: {stats['checkout_percentage']}%\n"
+                            f"Checkouts Made: {stats['checkouts_made']}\n"
+                            f"Checkouts Total: {stats['checkout_total']}"
+                        ),
+                        inline=False
+                    )
+                await ctx.send(embed=embed)
+                return
+    
+    scheduled_matches = [match for match in matches if match['status'] == 0]
+    played_matches = [match for match in matches if match['status'] == 4]
+    
+    embed.add_field(name="Scheduled Matches", value="\u200b", inline=False)
+    for match in scheduled_matches:
+        embed.add_field(
+            name=f"{match['players'][0]['name']} vs {match['players'][1]['name']}",
+            value=f"At {match['game_time']}",
+            inline=False
+        )
+    
+    embed.add_field(name="Played Matches", value="\u200b", inline=False)
+    for match in played_matches:
+        embed.add_field(
+            name=f"{match['players'][0]['name']} vs {match['players'][1]['name']}",
+            value=f"At {match['game_time']}",
+            inline=False
+        )
+    
+    embed.set_footer(text="Pro další informace použijte !help, nebo kontaktujte vývojáře.")
+    embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
+    
+    await ctx.send(embed=embed)
 
 # Testovací příkaz
 @bot.command(name="ping")
