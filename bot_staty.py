@@ -313,6 +313,10 @@ async def get_matches(tournament_id):
                 return await response.json()
     return None
 
+async def send_paginated_embeds(ctx, embeds):
+    for embed in embeds:
+        await ctx.send(embed=embed)
+
 @bot.command(name="tournament")
 async def tournament_command(ctx, tournament_name: str, player1_name: str = None, player2_name: str = None):
     tournaments_response = await get_tournaments()
@@ -337,11 +341,11 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
         
         hint_message = "Tournament not found. Here are some suggestions:\n\n**Past Tournaments:**\n"
         for t in past_tournaments:
-            hint_message += f"- {t['name']} (Ended: {t['end_date']})\n"
+            hint_message += f"- {t['name']} (Ended: {t['end_dt']})\n"
         
         hint_message += "\n**Upcoming Tournaments:**\n"
         for t in future_tournaments:
-            hint_message += f"- {t['name']} (Starts: {t['start_date']})\n"
+            hint_message += f"- {t['name']} (Starts: {t['start_dt']})\n"
         
         await ctx.send(hint_message)
         return
