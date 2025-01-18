@@ -340,6 +340,8 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
         return
     
     matches = matches_response  # Directly use the response as a list
+    matches.sort(key=lambda x: x['game_time'])  # Order matches by game_time
+    
     embed = discord.Embed(
         title=f"Tournament: {tournament_name}",
         description="",
