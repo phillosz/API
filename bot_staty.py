@@ -24,6 +24,21 @@ async def get_data(url):
                 return await response.json()
     return None
 
+@cached(cache=TTLCache(maxsize=100, ttl=3600))
+async def get_tournaments():
+    url = "https://api.assendelftmedia.nl/api/events?status%5B%5D=inprogress&status%5B%5D=scheduled&order_by=start_date&order_dir=asc"
+    return await get_data(url)
+
+@cached(cache=TTLCache(maxsize=100, ttl=3600))
+async def get_completed_tournaments():
+    url = "https://api.assendelftmedia.nl/api/events?status%5B%5D=completed&order_by=end_date&order_dir=desc"
+    return await get_data(url)
+
+@cached(cache=TTLCache(maxsize=100, ttl=3600))
+async def get_matches(tournament_id):
+    url = f"https://api.assendelftmedia.nl/api/games?event_id={tournament_id}"
+    return await get_data(url)
+
 async def fetch_additional_stats(player_key):
     url = f"https://app.dartsorakel.com/api/tools/performancePortalPlayerData?playerId={player_key}"
     data = await get_data(url)
@@ -289,22 +304,6 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
     embed = create_comparison_embed(player1_name, player1_data, player2_name, player2_data)
     await ctx.send(embed=embed)
 
-async def get_tournaments():
-    url = "https://api.assendelftmedia.nl/api/events?status%5B%5D=inprogress&status%5B%5D=scheduled&order_by=start_date&order_dir=asc"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            if response.status == 200:
-                return await response.json()
-    return None
-
-async def get_matches(tournament_id):
-    url = f"https://api.assendelftmedia.nl/api/games?event_id={tournament_id}"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            if response.status == 200:
-                return await response.json()
-    return None
-
 @bot.command(name="tournament")
 async def tournament_command(ctx, tournament_name: str, player1_name: str = None, player2_name: str = None):
     tournaments_response = await get_tournaments()
@@ -313,10 +312,21 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
         return
     
     tournament_id = None
-    for tournament in tournaments_response.get("data", []):  # Ensure we access the correct key
+    for tournament in tournaments_response.get("data", []):
         if tournament['name'].lower() == tournament_name.lower():
             tournament_id = tournament['id']
             break
+    
+    if not tournament_id:
+        completed_tournaments_response = await get_completed_tournaments()
+        if not completed_tournaments_response:
+            await ctx.send("Unable to fetch completed tournaments data.")
+            return
+        
+        for tournament in completed_tournaments_response.get("data", []):
+            if tournament['name'].lower() == tournament_name.lower():
+                tournament_id = tournament['id']
+                break
     
     if not tournament_id:
         await ctx.send(f"Tournament '{tournament_name}' not found.")
@@ -354,7 +364,6 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
                             f"Highest Checkout: {stats['highest_checkout']}\n"
                             f"Checkout Percentage: {stats['checkout_percentage']}%\n"
                             f"Checkouts Made: {stats['checkouts_made']}\n"
-                            f"Checkouts Total: {stats['checkout_total']}"
                         ),
                         inline=False
                     )
