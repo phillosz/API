@@ -331,7 +331,19 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
             break
     
     if not tournament_id:
-        await ctx.send(f"Tournament '{tournament_name}' not found.")
+        # Provide hints for 5 past and 5 future tournaments
+        past_tournaments = [t for t in completed_tournaments_response.get("data", [])[:5]]
+        future_tournaments = [t for t in tournaments_response.get("data", [])[:5]]
+        
+        hint_message = "Tournament not found. Here are some suggestions:\n\n**Past Tournaments:**\n"
+        for t in past_tournaments:
+            hint_message += f"- {t['name']} (Ended: {t['end_date']})\n"
+        
+        hint_message += "\n**Upcoming Tournaments:**\n"
+        for t in future_tournaments:
+            hint_message += f"- {t['name']} (Starts: {t['start_date']})\n"
+        
+        await ctx.send(hint_message)
         return
     
     matches_response = await get_matches(tournament_id)
