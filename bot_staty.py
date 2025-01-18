@@ -339,15 +339,16 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
         past_tournaments = [t for t in completed_tournaments_response.get("data", [])[:5]]
         future_tournaments = [t for t in tournaments_response.get("data", [])[:5]]
         
-        hint_message = "Tournament not found. Here are some suggestions:\n\n**Past Tournaments:**\n"
-        for t in past_tournaments:
-            hint_message += f"- {t['name']} (Ended: {t['end_dt']})\n"
+        embed = discord.Embed(
+            title="Tournament not found",
+            description="Here are some suggestions:",
+            color=discord.Color.red()
+        )
         
-        hint_message += "\n**Upcoming Tournaments:**\n"
-        for t in future_tournaments:
-            hint_message += f"- {t['name']} (Starts: {t['start_dt']})\n"
+        embed.add_field(name="**Past Tournaments:**", value="\n".join([f"- {t['name']} (Ended: {t['end_dt']})" for t in past_tournaments]), inline=False)
+        embed.add_field(name="**Upcoming Tournaments:**", value="\n".join([f"- {t['name']} (Starts: {t['start_dt']})" for t in future_tournaments]), inline=False)
         
-        await ctx.send(hint_message)
+        await ctx.send(embed=embed)
         return
     
     matches_response = await get_matches(tournament_id)
@@ -358,6 +359,7 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
     matches = matches_response  # Directly use the response as a list
     matches.sort(key=lambda x: x['game_time'])  # Order matches by game_time
     
+    embeds = []
     embed = discord.Embed(
         title=f"Tournament: {tournament_name}",
         description="",
@@ -396,6 +398,13 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
     
     embed.add_field(name="Scheduled Matches", value="\u200b", inline=False)
     for match in scheduled_matches:
+        if len(embed.fields) == 25:
+            embeds.append(embed)
+            embed = discord.Embed(
+                title=f"Tournament: {tournament_name}",
+                description="",
+                color=discord.Color.blue()
+            )
         embed.add_field(
             name=f"{match['players'][0]['name']} vs {match['players'][1]['name']}",
             value=f"At {match['game_time']}",
@@ -404,16 +413,21 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
     
     embed.add_field(name="Played Matches", value="\u200b", inline=False)
     for match in played_matches:
+        if len(embed.fields) == 25:
+            embeds.append(embed)
+            embed = discord.Embed(
+                title=f"Tournament: {tournament_name}",
+                description="",
+                color=discord.Color.blue()
+            )
         embed.add_field(
             name=f"{match['players'][0]['name']} vs {match['players'][1]['name']}",
             value=f"At {match['game_time']}",
             inline=False
         )
     
-    embed.set_footer(text="Pro další informace použijte !help, nebo kontaktujte vývojáře.")
-    embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
-    
-    await ctx.send(embed=embed)
+    embeds.append(embed)
+    await send_paginated_embeds(ctx, embeds)
 
 # Testovací příkaz
 @bot.command(name="ping")
