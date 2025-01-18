@@ -297,6 +297,14 @@ async def get_tournaments():
                 return await response.json()
     return None
 
+async def get_completed_tournaments():
+    url = "https://api.assendelftmedia.nl/api/events?status%5B%5D=completed&order_by=end_date&order_dir=desc"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                return await response.json()
+    return None
+
 async def get_matches(tournament_id):
     url = f"https://api.assendelftmedia.nl/api/games?event_id={tournament_id}"
     async with aiohttp.ClientSession() as session:
@@ -308,12 +316,16 @@ async def get_matches(tournament_id):
 @bot.command(name="tournament")
 async def tournament_command(ctx, tournament_name: str, player1_name: str = None, player2_name: str = None):
     tournaments_response = await get_tournaments()
-    if not tournaments_response:
+    completed_tournaments_response = await get_completed_tournaments()
+    
+    if not tournaments_response and not completed_tournaments_response:
         await ctx.send("Unable to fetch tournaments data.")
         return
     
+    all_tournaments = tournaments_response.get("data", []) + completed_tournaments_response.get("data", [])
+    
     tournament_id = None
-    for tournament in tournaments_response.get("data", []):  # Ensure we access the correct key
+    for tournament in all_tournaments:
         if tournament['name'].lower() == tournament_name.lower():
             tournament_id = tournament['id']
             break
