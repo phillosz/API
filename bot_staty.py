@@ -57,6 +57,7 @@ async def fetch_last_matches(player_key, date_from, date_to):
     for match in data["data"]:
         legs = match["loser_score"] + match["winner_score"]
         last_matches.append({
+            "opponent": match["opponent"],
             "date": match["match_date"],
             "legs": legs,
             "180s": match["stat1"]
