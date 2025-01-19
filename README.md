@@ -1,6 +1,6 @@
 # DartLog
 
-DartLog is a Discord bot designed to make it simple and convenient to access darts statistics, match data, and tournament information. By pulling data from multiple reputable websites, DartLog ensures users get accurate and up-to-date information in one place.
+DartLog is a Discord bot designed to make it simple and convenient to access darts statistics, match data, and tournament information. By pulling data from multiple reputable websites, DartLog ensures users get accurate and up-to-date information in one place. More information on [this website](https://dartslog.gitbook.io/dartlog-documentation)
 
 ## Features
 - Fetch player statistics with `!stats`
