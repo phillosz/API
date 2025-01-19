@@ -62,15 +62,15 @@ async def fetch_last_matches(player_name, date_from, date_to):
             'player_key': player['player_key']
     }
     
-    if player_name not in player_data:
-        return None
+    #if player_name not in player_data:
+       # return None
 
     player_key = player_data[player_name]["player_key"]
     
     url = f"https://app.dartsorakel.com/api/player/matches/{player_key}?dateFrom={date_from}&dateTo={date_to}&rankKey=26&organStat=All&tourns=All&_={timestamp}"
     data = await get_data(url)
-    if not data:
-        return None
+    #if not data:
+        #return None
 
     last_matches = []
     for match in data.get("matches", []):  # Adjust to new data structure
