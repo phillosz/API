@@ -18,9 +18,12 @@ PREMIUM_USERS = {586540043812864050}  # Změň na své ID
 # Cache for storing fetched player data and API responses within the same command execution
 player_data_cache = {}
 api_response_cache = {}
+cache_ttl = 3600  # Time-to-live for cache in seconds (1 hour)
+cache_timestamp = {}
 
 async def get_data(url):
-    if url in api_response_cache:
+    current_time = datetime.now().timestamp()
+    if url in api_response_cache and (current_time - cache_timestamp[url]) < cache_ttl:
         return api_response_cache[url]
     
     async with aiohttp.ClientSession() as session:
@@ -28,6 +31,7 @@ async def get_data(url):
             if response.status == 200:
                 data = await response.json()
                 api_response_cache[url] = data
+                cache_timestamp[url] = current_time
                 return data
     return None
 
@@ -226,9 +230,10 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
 # Příkaz pro základní statistiky
 @bot.command(name="stats")
 async def stats_command(ctx, player_name: str, date_from: str = None, date_to: str = None):
-    global player_data_cache, api_response_cache
+    global player_data_cache, api_response_cache, cache_timestamp
     player_data_cache = {}  # Clear cache at the start of each command execution
     api_response_cache = {}  # Clear API response cache at the start of each command execution
+    cache_timestamp = {}  # Clear cache timestamps at the start of each command execution
 
     if date_from is None:
         date_from = (datetime.now() - timedelta(days=80)).strftime("%Y-%m-%d")
