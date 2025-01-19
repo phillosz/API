@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from datetime import datetime, timedelta
 import aiohttp
+from bs4 import BeautifulSoup  # Add this import
 
 # Bot Setup
 intents = discord.Intents.default()
@@ -55,9 +56,13 @@ async def fetch_last_matches(player_key, date_from, date_to):
     last_matches = []
     
     for match in data["data"]:
+        # Extract opponent's name from HTML link
+        soup = BeautifulSoup(match["opponent"], "html.parser")
+        opponent_name = soup.get_text()
+        
         legs = match["loser_score"] + match["winner_score"]
         last_matches.append({
-            "opponent": match["opponent"],
+            "opponent": opponent_name,
             "date": match["match_date"],
             "legs": legs,
             "180s": match["stat1"]

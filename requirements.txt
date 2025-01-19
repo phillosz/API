@@ -5,3 +5,4 @@ schedule
 matplotlib
 aiocache
 cachetools
+bs4
