@@ -150,7 +150,6 @@ def fill_missing_stats(data):
 def create_embed(player_name, data, color, description):
     fill_missing_stats(data)
 
-    embeds = []
     embed = discord.Embed(
         title=f"Statistics for player {player_name}",
         description=description,
@@ -177,13 +176,6 @@ def create_embed(player_name, data, color, description):
         
     if "last_matches" in data:
         for match in data["last_matches"]:
-            if len(embed) >= 25:
-                embeds.append(embed)
-                embed = discord.Embed(
-                    title=f"Statistics for player {player_name}",
-                    description=description,
-                    color=color
-                )
             embed.add_field(
                 name=f"Match vs {match['opponent']} on {match['date']}",
                 value=f"Legs: {match['legs']}, 180s: {match['180s']}",
@@ -192,14 +184,12 @@ def create_embed(player_name, data, color, description):
 
     embed.set_footer(text="For further information use !help, or contact the dev.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
-    embeds.append(embed)
 
-    return embeds
+    return embed
 
 def create_premium_embed(player_name, data):
     fill_missing_stats(data)
 
-    embeds = []
     embed = discord.Embed(
         title=f"Premium statistics for player {player_name}",
         description="In-depth statistics.",
@@ -215,7 +205,7 @@ def create_premium_embed(player_name, data):
         embed.add_field(name="🎯 Average", value=f"{average} (Current: {average_actual})", inline=False)
     if "checkout_pcnt" in data or "checkout_pcnt_actual" in data:
         checkout_pcnt = data.get('checkout_pcnt', 'N/A')
-        checkout_pcnt_actual = data.get('checkout_pcnt_actual', 'N/A')
+        checkout_pcnt_actual = data.get('checkout_pcnt', 'N/A')
         embed.add_field(name="✅ Checkout %", value=f"{checkout_pcnt} (Current: {checkout_pcnt_actual})", inline=False)
     if "maximum_per_leg" in data or "maximum_per_leg_actual" in data:
         maximum_per_leg = data.get('maximum_per_leg', 'N/A')
@@ -228,22 +218,14 @@ def create_premium_embed(player_name, data):
     if "additional_stats" in data:
         additional_stats = data["additional_stats"]
         for stat_name, stat_values in additional_stats.items():
-            if len(embed) >= 25:
-                embeds.append(embed)
-                embed = discord.Embed(
-                    title=f"Premium statistics for player {player_name}",
-                    description="In-depth statistics.",
-                    color=discord.Color.gold()
-                )
             # Convert None values to empty strings
             stat_values = [str(value) if value is not None else '' for value in stat_values]
             embed.add_field(name=stat_name, value=", ".join(stat_values), inline=False)
 
     embed.set_footer(text="For further information use !help, or contact the dev.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
-    embeds.append(embed)
 
-    return embeds
+    return embed
 
 def create_comparison_embed(player1_name, player1_data, player2_name, player2_data):
     fill_missing_stats(player1_data)
@@ -306,9 +288,8 @@ async def stats_command(ctx, player_name: str, date_from: str = None, date_to: s
         await ctx.send(f"Statistics for player {player_name} could not been loaded.")
         return
 
-    embeds = create_embed(player_name, player_data, discord.Color.blue(), "Basic statistics overview.")
-    for embed in embeds:
-        await ctx.send(embed=embed)
+    embed = create_embed(player_name, player_data, discord.Color.blue(), "Basic statistics overview.")
+    await ctx.send(embed=embed)
 
 # Command for premium users
 @bot.command(name="premiumstats")
@@ -334,9 +315,8 @@ async def premium_stats_command(ctx, player_name: str, date_from: str = None, da
         await ctx.send(f"Statistics for player {player_name} could not been loaded.")
         return
 
-    embeds = create_premium_embed(player_name, player_data)
-    for embed in embeds:
-        await ctx.send(embed=embed)
+    embed = create_premium_embed(player_name, player_data)
+    await ctx.send(embed=embed)
 
 @bot.command(name="compare")
 async def compare_command(ctx, player1_name: str, player2_name: str, date_from: str = None, date_to: str = None):
@@ -381,9 +361,8 @@ async def last_matches_command(ctx, player_name: str):
         await ctx.send(f"Statistics for player {player_name} could not been loaded.")
         return
 
-    embeds = create_embed(player_name, player_data, discord.Color.blue(), "Last matches overview.")
-    for embed in embeds:
-        await ctx.send(embed=embed)
+    embed = create_embed(player_name, player_data, discord.Color.blue(), "Last matches overview.")
+    await ctx.send(embed=embed)
 
 async def get_tournaments():
     url = "https://api.assendelftmedia.nl/api/events?status%5B%5D=inprogress&status%5B%5D=scheduled&order_by=start_date&order_dir=asc"
