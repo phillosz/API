@@ -216,9 +216,24 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
 
     return embed
 
+# Cache for storing fetched player data within the same command execution
+player_data_cache = {}
+
+async def fetch_player_data_cached(player_name, date_from, date_to):
+    cache_key = (player_name, date_from, date_to)
+    if cache_key in player_data_cache:
+        return player_data_cache[cache_key]
+    
+    player_data = await fetch_player_data(player_name, date_from, date_to)
+    player_data_cache[cache_key] = player_data
+    return player_data
+
 # Příkaz pro základní statistiky
 @bot.command(name="stats")
 async def stats_command(ctx, player_name: str, date_from: str = None, date_to: str = None):
+    global player_data_cache
+    player_data_cache = {}  # Clear cache at the start of each command execution
+
     if date_from is None:
         date_from = (datetime.now() - timedelta(days=80)).strftime("%Y-%m-%d")
     if date_to is None:
@@ -231,7 +246,7 @@ async def stats_command(ctx, player_name: str, date_from: str = None, date_to: s
         await ctx.send(f"Chyba ve formátu dat: {e}")
         return
 
-    player_data = await fetch_player_data(player_name, date_from, date_to)
+    player_data = await fetch_player_data_cached(player_name, date_from, date_to)
     if not player_data:
         await ctx.send(f"Data pro hráče {player_name} nebyla nalezena.")
         return
@@ -242,6 +257,9 @@ async def stats_command(ctx, player_name: str, date_from: str = None, date_to: s
 # Příkaz pro prémiové statistiky
 @bot.command(name="premiumstats")
 async def premium_stats_command(ctx, player_name: str, date_from: str = None, date_to: str = None):
+    global player_data_cache
+    player_data_cache = {}  # Clear cache at the start of each command execution
+
     if date_from is None:
         date_from = (datetime.now() - timedelta(days=80)).strftime("%Y-%m-%d")
     if date_to is None:
@@ -254,7 +272,7 @@ async def premium_stats_command(ctx, player_name: str, date_from: str = None, da
         await ctx.send(f"Chyba ve formátu dat: {e}")
         return
 
-    player_data = await fetch_player_data(player_name, date_from, date_to)
+    player_data = await fetch_player_data_cached(player_name, date_from, date_to)
     if not player_data:
         await ctx.send(f"Data pro hráče {player_name} nebyla nalezena.")
         return
@@ -264,6 +282,9 @@ async def premium_stats_command(ctx, player_name: str, date_from: str = None, da
 
 @bot.command(name="compare")
 async def compare_command(ctx, player1_name: str, player2_name: str, date_from: str = None, date_to: str = None):
+    global player_data_cache
+    player_data_cache = {}  # Clear cache at the start of each command execution
+
     if date_from is None:
         date_from = (datetime.now() - timedelta(days=80)).strftime("%Y-%m-%d")
     if date_to is None:
@@ -276,8 +297,8 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
         await ctx.send(f"Chyba ve formátu dat: {e}")
         return
 
-    player1_data = await fetch_player_data(player1_name, date_from, date_to)
-    player2_data = await fetch_player_data(player2_name, date_from, date_to)
+    player1_data = await fetch_player_data_cached(player1_name, date_from, date_to)
+    player2_data = await fetch_player_data_cached(player2_name, date_from, date_to)
     
     if not player1_data:
         await ctx.send(f"Data pro hráče {player1_name} nebyla nalezena.")
