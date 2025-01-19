@@ -56,6 +56,8 @@ async def fetch_last_matches(player_key, limit=10):
     last_matches = []
     
     for match in data["data"]:
+        if len(last_matches) >= limit:
+            break
         # Extract opponent's name from HTML link
         soup = BeautifulSoup(match["opponent"], "html.parser")
         opponent_name = soup.get_text()
