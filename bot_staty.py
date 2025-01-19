@@ -45,6 +45,25 @@ async def fetch_additional_stats(player_key):
 
     return additional_stats
 
+async def fetch_last_matches(player_key):
+    timestamp = int(datetime.now().timestamp() * 1000)
+    
+    url = f"https://app.dartsorakel.com/api/player/matches/{player_key}?dateFrom={date_from}&dateTo={date_to}&rankKey=26&organStat=All&tourns=All&_={timestamp}"
+    data = await get_data(url)
+    if not data:
+        return None
+
+    last_matches = []
+    for match in data:
+        last_matches.append({
+            "opponent": match["opponent"],
+            "date": match["date"],
+            "legs": match["legs"],
+            "180s": match["180s"]
+        })
+
+    return last_matches
+
 async def fetch_player_data(player_name, date_from, date_to):
     timestamp = int(datetime.now().timestamp() * 1000)
     
@@ -73,6 +92,11 @@ async def fetch_player_data(player_name, date_from, date_to):
     additional_stats = await fetch_additional_stats(player_key)
     if additional_stats:
         player_data[player_name]['additional_stats'] = additional_stats
+
+    # Fetch last matches
+    last_matches = await fetch_last_matches(player_key)
+    if last_matches:
+        player_data[player_name]['last_matches'] = last_matches
 
     # More detailed statistics URLs
     stats_urls = {
@@ -142,6 +166,14 @@ def create_embed(player_name, data, color, description):
         embed.add_field(name="💥 Max per Leg", value=f"{maximum_per_leg} (Current: {maximum_per_leg_actual})", inline=False)
     if "maximums" in data:
         embed.add_field(name="🎲 Maximums Total", value=data["maximums"], inline=True)
+
+    if "last_matches" in data:
+        for match in data["last_matches"]:
+            embed.add_field(
+                name=f"Match vs {match['opponent']} on {match['date']}",
+                value=f"Legs: {match['legs']}, 180s: {match['180s']}",
+                inline=False
+            )
 
     embed.set_footer(text="For further information use !help, or contact the dev.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
@@ -308,6 +340,24 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
         return
 
     embed = create_comparison_embed(player1_name, player1_data, player2_name, player2_data)
+    await ctx.send(embed=embed)
+
+@bot.command(name="lastmatches")
+async def last_matches_command(ctx, player_name: str):
+    global player_data_cache, api_response_cache, cache_timestamp
+    player_data_cache = {}  # Clear cache at the start of each command execution
+    api_response_cache = {}  # Clear API response cache at the start of each command execution
+    cache_timestamp = {}  # Clear cache timestamps at the start of each command execution
+
+    date_from = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")  # Default to 45 days ago
+    date_to = datetime.now().strftime("%Y-%m-%d")  # Default to today
+
+    player_data = await fetch_player_data(player_name, date_from, date_to)
+    if not player_data:
+        await ctx.send(f"Statistics for player {player_name} could not been loaded.")
+        return
+
+    embed = create_embed(player_name, player_data, discord.Color.blue(), "Last matches overview.")
     await ctx.send(embed=embed)
 
 async def get_tournaments():
