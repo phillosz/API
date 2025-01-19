@@ -54,7 +54,7 @@ async def fetch_last_matches(player_key, date_from, date_to):
         return None
 
     last_matches = []
-    for match in data:
+    for match in data.get("matches", []):  # Adjust to new data structure
         legs = match["loser_score"] + match["winner_score"]
         last_matches.append({
             "date": match["match_date"],
@@ -427,7 +427,7 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
         await ctx.send("Unable to fetch matches data.")
         return
     
-    matches = matches_response  # Directly use the response as a list
+    matches = matches_response.get("matches", [])  # Adjust to new data structure
     matches.sort(key=lambda x: x['game_time'])  # Order matches by game_time
     
     embeds = []
