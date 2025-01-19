@@ -15,13 +15,20 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # Prémioví uživatelé
 PREMIUM_USERS = {586540043812864050}  # Změň na své ID
 
-# Funkce pro získání dat z API (s cache)
-@cached(cache=TTLCache(maxsize=100, ttl=3600))
+# Cache for storing fetched player data and API responses within the same command execution
+player_data_cache = {}
+api_response_cache = {}
+
 async def get_data(url):
+    if url in api_response_cache:
+        return api_response_cache[url]
+    
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             if response.status == 200:
-                return await response.json()
+                data = await response.json()
+                api_response_cache[url] = data
+                return data
     return None
 
 async def fetch_additional_stats(player_key):
@@ -216,27 +223,6 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
 
     return embed
 
-# Cache for storing fetched player data and API responses within the same command execution
-player_data_cache = {}
-api_response_cache = {}
-
-async def get_data_cached(url):
-    if url in api_response_cache:
-        return api_response_cache[url]
-    
-    response = await get_data(url)
-    api_response_cache[url] = response
-    return response
-
-async def fetch_player_data_cached(player_name, date_from, date_to):
-    cache_key = (player_name, date_from, date_to)
-    if cache_key in player_data_cache:
-        return player_data_cache[cache_key]
-    
-    player_data = await fetch_player_data(player_name, date_from, date_to)
-    player_data_cache[cache_key] = player_data
-    return player_data
-
 # Příkaz pro základní statistiky
 @bot.command(name="stats")
 async def stats_command(ctx, player_name: str, date_from: str = None, date_to: str = None):
@@ -256,7 +242,7 @@ async def stats_command(ctx, player_name: str, date_from: str = None, date_to: s
         await ctx.send(f"Chyba ve formátu dat: {e}")
         return
 
-    player_data = await fetch_player_data_cached(player_name, date_from, date_to)
+    player_data = await fetch_player_data(player_name, date_from, date_to)
     if not player_data:
         await ctx.send(f"Data pro hráče {player_name} nebyla nalezena.")
         return
@@ -283,7 +269,7 @@ async def premium_stats_command(ctx, player_name: str, date_from: str = None, da
         await ctx.send(f"Chyba ve formátu dat: {e}")
         return
 
-    player_data = await fetch_player_data_cached(player_name, date_from, date_to)
+    player_data = await fetch_player_data(player_name, date_from, date_to)
     if not player_data:
         await ctx.send(f"Data pro hráče {player_name} nebyla nalezena.")
         return
@@ -309,8 +295,8 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
         await ctx.send(f"Chyba ve formátu dat: {e}")
         return
 
-    player1_data = await fetch_player_data_cached(player1_name, date_from, date_to)
-    player2_data = await fetch_player_data_cached(player2_name, date_from, date_to)
+    player1_data = await fetch_player_data(player1_name, date_from, date_to)
+    player2_data = await fetch_player_data(player2_name, date_from, date_to)
     
     if not player1_data:
         await ctx.send(f"Data pro hráče {player1_name} nebyla nalezena.")
