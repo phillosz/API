@@ -216,8 +216,17 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
 
     return embed
 
-# Cache for storing fetched player data within the same command execution
+# Cache for storing fetched player data and API responses within the same command execution
 player_data_cache = {}
+api_response_cache = {}
+
+async def get_data_cached(url):
+    if url in api_response_cache:
+        return api_response_cache[url]
+    
+    response = await get_data(url)
+    api_response_cache[url] = response
+    return response
 
 async def fetch_player_data_cached(player_name, date_from, date_to):
     cache_key = (player_name, date_from, date_to)
@@ -231,8 +240,9 @@ async def fetch_player_data_cached(player_name, date_from, date_to):
 # Příkaz pro základní statistiky
 @bot.command(name="stats")
 async def stats_command(ctx, player_name: str, date_from: str = None, date_to: str = None):
-    global player_data_cache
+    global player_data_cache, api_response_cache
     player_data_cache = {}  # Clear cache at the start of each command execution
+    api_response_cache = {}  # Clear API response cache at the start of each command execution
 
     if date_from is None:
         date_from = (datetime.now() - timedelta(days=80)).strftime("%Y-%m-%d")
@@ -257,8 +267,9 @@ async def stats_command(ctx, player_name: str, date_from: str = None, date_to: s
 # Příkaz pro prémiové statistiky
 @bot.command(name="premiumstats")
 async def premium_stats_command(ctx, player_name: str, date_from: str = None, date_to: str = None):
-    global player_data_cache
+    global player_data_cache, api_response_cache
     player_data_cache = {}  # Clear cache at the start of each command execution
+    api_response_cache = {}  # Clear API response cache at the start of each command execution
 
     if date_from is None:
         date_from = (datetime.now() - timedelta(days=80)).strftime("%Y-%m-%d")
@@ -282,8 +293,9 @@ async def premium_stats_command(ctx, player_name: str, date_from: str = None, da
 
 @bot.command(name="compare")
 async def compare_command(ctx, player1_name: str, player2_name: str, date_from: str = None, date_to: str = None):
-    global player_data_cache
+    global player_data_cache, api_response_cache
     player_data_cache = {}  # Clear cache at the start of each command execution
+    api_response_cache = {}  # Clear API response cache at the start of each command execution
 
     if date_from is None:
         date_from = (datetime.now() - timedelta(days=80)).strftime("%Y-%m-%d")
