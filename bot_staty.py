@@ -99,7 +99,7 @@ async def fetch_player_data(player_name, date_from, date_to):
         player_data[player_name]['additional_stats'] = additional_stats
 
     # Fetch last matches
-    last_matches = await fetch_last_matches(player_key, date_from, date_to)
+    last_matches = await fetch_last_matches(player_key)
     if last_matches:
         player_data[player_name]['last_matches'] = last_matches
 
