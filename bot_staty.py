@@ -54,7 +54,7 @@ async def fetch_last_matches(player_key, date_from, date_to):
     data = url_response.copy()
     last_matches = []
     
-    for match in data["data"][0]:
+    for match in data["data"]:
         legs = match["loser_score"] + match["winner_score"]
         last_matches.append({
             "date": match["match_date"],
