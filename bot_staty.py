@@ -232,7 +232,7 @@ async def stats_command(ctx, player_name: str, date_from: str = None, date_to: s
     cache_timestamp = {}  # Clear cache timestamps at the start of each command execution
 
     if date_from is None:
-        date_from = (datetime.now() - timedelta(days=80)).strftime("%Y-%m-%d")
+        date_from = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")  # Change to 45 days
     if date_to is None:
         date_to = datetime.now().strftime("%Y-%m-%d")
 
@@ -259,7 +259,7 @@ async def premium_stats_command(ctx, player_name: str, date_from: str = None, da
     api_response_cache = {}  # Clear API response cache at the start of each command execution
 
     if date_from is None:
-        date_from = (datetime.now() - timedelta(days=80)).strftime("%Y-%m-%d")
+        date_from = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")  # Change to 45 days
     if date_to is None:
         date_to = datetime.now().strftime("%Y-%m-%d")
 
@@ -285,7 +285,7 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
     api_response_cache = {}  # Clear API response cache at the start of each command execution
 
     if date_from is None:
-        date_from = (datetime.now() - timedelta(days=80)).strftime("%Y-%m-%d")
+        date_from = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")  # Change to 45 days
     if date_to is None:
         date_to = datetime.now().strftime("%Y-%m-%d")
 
