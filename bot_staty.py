@@ -100,7 +100,8 @@ def fill_missing_stats(data):
     additional_stats = data["additional_stats"]
 
     def calculate_average(values):
-        return sum(float(v.strip('%')) if isinstance(v, str) and v.endswith('%') else float(v) for v in values) / len(values)
+        valid_values = [v for v in values if v is not None]  # Filter out None values
+        return sum(float(v.strip('%')) if isinstance(v, str) and v.endswith('%') else float(v) for v in valid_values) / len(valid_values)
 
     if "average" not in data and "Averages" in additional_stats:
         data["average"] = calculate_average(additional_stats["Averages"])
