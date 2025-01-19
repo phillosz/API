@@ -1,19 +1,15 @@
 import discord
 from discord.ext import commands
 from datetime import datetime, timedelta
-import io
-from aiocache import cached, SimpleMemoryCache
-import aiohttp  # Add this import for asynchronous HTTP requests
-import json  # Add this import for JSON handling
-from cachetools import cached, TTLCache
+import aiohttp
 
-# Nastavení bota
+# Bot Setup
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Prémioví uživatelé
-PREMIUM_USERS = {586540043812864050}  # Změň na své ID
+# Premium users
+PREMIUM_USERS = {586540043812864050}
 
 # Cache for storing fetched player data and API responses within the same command execution
 player_data_cache = {}
@@ -78,7 +74,7 @@ async def fetch_player_data(player_name, date_from, date_to):
     if additional_stats:
         player_data[player_name]['additional_stats'] = additional_stats
 
-    # Další statistiky
+    # More detailed statistics URLs
     stats_urls = {
         "average": f"https://app.dartsorakel.com/api/stats/player?rankKey=25&showStatsBreakdown=0&playerKeyToHighlight={player_key}&minMatches=200&limit=32&_={timestamp}",
         "average_actual": f"https://app.dartsorakel.com/api/stats/player?dateFrom={date_from}&dateTo={date_to}&rankKey=25&organStat=All&tourns=All&minMatches=200&tourCardYear=&showStatsBreakdown=0&_={timestamp}",
@@ -123,12 +119,12 @@ def create_embed(player_name, data, color, description):
     fill_missing_stats(data)
 
     embed = discord.Embed(
-        title=f"Statistiky pro hráče {player_name}",
+        title=f"Statistics for player {player_name}",
         description=description,
-        color=color  # Barva embedu
+        color=color  # Colour of the embed
     )
 
-    # Přidáme dvojice statistik
+    # Add pairs of statistics
     if "rank" in data:
         embed.add_field(name="🏆 Rank", value=data["rank"], inline=True)
     if "average" in data or "average_actual" in data:
@@ -144,9 +140,9 @@ def create_embed(player_name, data, color, description):
         maximum_per_leg_actual = data.get('maximum_per_leg_actual', 'N/A')
         embed.add_field(name="💥 Max per Leg", value=f"{maximum_per_leg} (Current: {maximum_per_leg_actual})", inline=False)
     if "maximums" in data:
-        embed.add_field(name="🎲 Maximums celkem", value=data["maximums"], inline=True)
+        embed.add_field(name="🎲 Maximums Total", value=data["maximums"], inline=True)
 
-    embed.set_footer(text="Pro další informace použijte !help, nebo kontaktujte vývojáře.")
+    embed.set_footer(text="For further information use !help, or contact the dev.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
 
     return embed
@@ -155,12 +151,12 @@ def create_premium_embed(player_name, data):
     fill_missing_stats(data)
 
     embed = discord.Embed(
-        title=f"Prémiové statistiky pro hráče {player_name}",
-        description="Prémiové zobrazení statistik",
-        color=discord.Color.gold()  # Barva embedu
+        title=f"Premium statistics for player {player_name}",
+        description="In-depth statistics.",
+        color=discord.Color.gold()  # Colour of the embed
     )
 
-    # Přidáme dvojice statistik
+    # Add pairs of statistics
     if "rank" in data:
         embed.add_field(name="🏆 Rank", value=data["rank"], inline=True)
     if "average" in data or "average_actual" in data:
@@ -176,7 +172,7 @@ def create_premium_embed(player_name, data):
         maximum_per_leg_actual = data.get('maximum_per_leg_actual', 'N/A')
         embed.add_field(name="💥 Max per Leg", value=f"{maximum_per_leg} (Current: {maximum_per_leg_actual})", inline=False)
     if "maximums" in data:
-        embed.add_field(name="🎲 Maximums celkem", value=data["maximums"], inline=True)
+        embed.add_field(name="🎲 Maximums Total", value=data["maximums"], inline=True)
 
     # Add additional stats if available
     if "additional_stats" in data:
@@ -186,7 +182,7 @@ def create_premium_embed(player_name, data):
             stat_values = [str(value) if value is not None else '' for value in stat_values]
             embed.add_field(name=stat_name, value=", ".join(stat_values), inline=False)
 
-    embed.set_footer(text="Pro další informace použijte !help, nebo kontaktujte vývojáře.")
+    embed.set_footer(text="For further information use !help, or contact the dev.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
 
     return embed
@@ -195,7 +191,7 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
     fill_missing_stats(player1_data)
     fill_missing_stats(player2_data)
 
-    embed = discord.Embed(title="Porovnání hráčů", color=discord.Color.purple())
+    embed = discord.Embed(title="Player Comparison", color=discord.Color.purple())
     
     embed.add_field(name=f"{player1_name} 🆚 {player2_name}", value="\u200b", inline=False)
     
@@ -220,9 +216,9 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
         maximum_per_leg_actual2 = player2_data.get('maximum_per_leg_actual', 'N/A')
         embed.add_field(name="💥 Max per Leg", value=f"{maximum_per_leg1} (Current: {maximum_per_leg_actual1}) 🆚 {maximum_per_leg2} (Current: {maximum_per_leg_actual2})", inline=False)
     if "maximums" in player1_data and "maximums" in player2_data:
-        embed.add_field(name="🎲 Maximums celkem", value=f"{player1_data['maximums']} 🆚 {player2_data['maximums']}", inline=True)
+        embed.add_field(name="🎲 Maximums Total", value=f"{player1_data['maximums']} 🆚 {player2_data['maximums']}", inline=True)
 
-    embed.set_footer(text="Statistiky poskytované vaším botem!")
+    embed.set_footer(text="For further information use !help, or contact the dev.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")
 
     return embed
@@ -244,18 +240,18 @@ async def stats_command(ctx, player_name: str, date_from: str = None, date_to: s
         datetime.strptime(date_from, "%Y-%m-%d")
         datetime.strptime(date_to, "%Y-%m-%d")
     except ValueError as e:
-        await ctx.send(f"Chyba ve formátu dat: {e}")
+        await ctx.send(f"Error in formatting: {e}")
         return
 
     player_data = await fetch_player_data(player_name, date_from, date_to)
     if not player_data:
-        await ctx.send(f"Data pro hráče {player_name} nebyla nalezena.")
+        await ctx.send(f"Statistics for player {player_name} could not been loaded.")
         return
 
-    embed = create_embed(player_name, player_data, discord.Color.blue(), "Základní zobrazení statistik")
+    embed = create_embed(player_name, player_data, discord.Color.blue(), "Basic statistics overview.")
     await ctx.send(embed=embed)
 
-# Příkaz pro prémiové statistiky
+# Command for premium users
 @bot.command(name="premiumstats")
 async def premium_stats_command(ctx, player_name: str, date_from: str = None, date_to: str = None):
     global player_data_cache, api_response_cache
@@ -271,12 +267,12 @@ async def premium_stats_command(ctx, player_name: str, date_from: str = None, da
         datetime.strptime(date_from, "%Y-%m-%d")
         datetime.strptime(date_to, "%Y-%m-%d")
     except ValueError as e:
-        await ctx.send(f"Chyba ve formátu dat: {e}")
+        await ctx.send(f"Error in formatting: {e}")
         return
 
     player_data = await fetch_player_data(player_name, date_from, date_to)
     if not player_data:
-        await ctx.send(f"Data pro hráče {player_name} nebyla nalezena.")
+        await ctx.send(f"Statistics for player {player_name} could not been loaded.")
         return
 
     embed = create_premium_embed(player_name, player_data)
@@ -297,17 +293,17 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
         datetime.strptime(date_from, "%Y-%m-%d")
         datetime.strptime(date_to, "%Y-%m-%d")
     except ValueError as e:
-        await ctx.send(f"Chyba ve formátu dat: {e}")
+        await ctx.send(f"Error in formatting: {e}")
         return
 
     player1_data = await fetch_player_data(player1_name, date_from, date_to)
     player2_data = await fetch_player_data(player2_name, date_from, date_to)
     
     if not player1_data:
-        await ctx.send(f"Data pro hráče {player1_name} nebyla nalezena.")
+        await ctx.send(f"Statistics for player {player1_name} could not been loaded.")
         return
     if not player2_data:
-        await ctx.send(f"Data pro hráče {player2_name} nebyla nalezena.")
+        await ctx.send(f"Statistics for player {player2_name} could not been loaded.")
         return
 
     embed = create_comparison_embed(player1_name, player1_data, player2_name, player2_data)
@@ -452,11 +448,6 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
     
     embeds.append(embed)
     await send_paginated_embeds(ctx, embeds)
-
-# Testovací příkaz
-@bot.command(name="ping")
-async def ping_command(ctx):
-    await ctx.send("Pong!")
 
 @bot.command(name="shutdown")
 @commands.is_owner()
