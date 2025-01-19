@@ -184,6 +184,14 @@ def create_embed(player_name, data, color, description):
         embed.add_field(name="💥 Max per Leg", value=f"{maximum_per_leg} (Current: {maximum_per_leg_actual})", inline=False)
     if "maximums" in data:
         embed.add_field(name="🎲 Maximums Total", value=data["maximums"], inline=True)
+        
+    if "last_matches" in data:
+        for match in data["last_matches"]:
+            embed.add_field(
+                name=f"Match vs {match['opponent']} on {match['date']}",
+                value=f"Legs: {match['legs']}, 180s: {match['180s']}",
+                inline=False
+            )
 
     embed.set_footer(text="For further information use !help, or contact the dev.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
