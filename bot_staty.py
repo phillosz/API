@@ -9,7 +9,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Premium users
-PREMIUM_USERS = {586540043812864050}
+PREMIUM_USERS = {586540043812864050, 833783091003785266, 738811763101007923}
 
 # Cache for storing fetched player data and API responses within the same command execution
 player_data_cache = {}
