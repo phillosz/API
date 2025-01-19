@@ -167,14 +167,6 @@ def create_embed(player_name, data, color, description):
     if "maximums" in data:
         embed.add_field(name="🎲 Maximums Total", value=data["maximums"], inline=True)
 
-    if "last_matches" in data:
-        for match in data["last_matches"]:
-            embed.add_field(
-                name=f"Match vs {match['opponent']} on {match['date']}",
-                value=f"Legs: {match['legs']}, 180s: {match['180s']}",
-                inline=False
-            )
-
     embed.set_footer(text="For further information use !help, or contact the dev.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
 
@@ -352,7 +344,7 @@ async def last_matches_command(ctx, player_name: str):
     date_from = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")  # Default to 45 days ago
     date_to = datetime.now().strftime("%Y-%m-%d")  # Default to today
 
-    player_data = await fetch_player_data(player_name, date_from, date_to)
+    player_data = await fetch_last_matches(player_name, date_from, date_to)
     if not player_data:
         await ctx.send(f"Statistics for player {player_name} could not been loaded.")
         return
