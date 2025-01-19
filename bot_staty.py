@@ -46,10 +46,10 @@ async def fetch_additional_stats(player_key):
 
     return additional_stats
 
-async def fetch_last_matches(player_key, date_from, date_to):
+async def fetch_last_matches(player_key, limit=10):
     timestamp = int(datetime.now().timestamp() * 1000)
     
-    url = f"https://app.dartsorakel.com/api/player/matches/{player_key}?dateFrom={date_from}&dateTo={date_to}&rankKey=26&organStat=All&tourns=All&_={timestamp}"
+    url = f"https://app.dartsorakel.com/api/player/matches/{player_key}?rankKey=26&organStat=All&tourns=All&limit={limit}&_={timestamp}"
     url_response = await get_data(url)
 
     data = url_response.copy()
@@ -354,10 +354,7 @@ async def last_matches_command(ctx, player_name: str):
     api_response_cache = {}  # Clear API response cache at the start of each command execution
     cache_timestamp = {}  # Clear cache timestamps at the start of each command execution
 
-    date_from = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")  # Default to 45 days ago
-    date_to = datetime.now().strftime("%Y-%m-%d")  # Default to today
-
-    player_data = await fetch_last_matches(player_name, date_from, date_to)
+    player_data = await fetch_last_matches(player_name)
     if not player_data:
         await ctx.send(f"Statistics for player {player_name} could not been loaded.")
         return
