@@ -53,7 +53,7 @@ async def fetch_last_matches(player_name, date_from, date_to):
     if not url_response:
         return None
     
-    data = url_response.get("data", [])
+    data = url_response.copy()
     player_data = {}
     
     for player in data:
@@ -92,7 +92,7 @@ async def fetch_player_data(player_name, date_from, date_to):
     if not url_response:
         return None
 
-    data = url_response.get("data", [])
+    data = url_response.copy()
     player_data = {}
 
     for player in data:
