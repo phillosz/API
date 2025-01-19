@@ -45,8 +45,27 @@ async def fetch_additional_stats(player_key):
 
     return additional_stats
 
-async def fetch_last_matches(player_key, date_from, date_to):
+async def fetch_last_matches(player_name, date_from, date_to):
     timestamp = int(datetime.now().timestamp() * 1000)
+    
+    players_url = "https://app.dartsorakel.com/dropdownDataSearch"
+    url_response = await get_data(players_url)
+    if not url_response:
+        return None
+    
+    data = url_response.get("data", [])
+    player_data = {}
+    
+    for player in data:
+        player_data[player['player_name']] = {
+            'player_name': player['player_name'],
+            'player_key': player['player_key']
+    }
+    
+    if player_name not in player_data:
+        return None
+
+    player_key = player_data[player_name]["player_key"]
     
     url = f"https://app.dartsorakel.com/api/player/matches/{player_key}?dateFrom={date_from}&dateTo={date_to}&rankKey=26&organStat=All&tourns=All&_={timestamp}"
     data = await get_data(url)
@@ -68,7 +87,8 @@ async def fetch_player_data(player_name, date_from, date_to):
     timestamp = int(datetime.now().timestamp() * 1000)
     
     base_url = f"https://app.dartsorakel.com/api/stats/player?dateFrom={date_from}&dateTo={date_to}&rankKey=26&organStat=All&tourns=All&minMatches=200&tourCardYear=&showStatsBreakdown=0&_={timestamp}"
-    url_response = await get_data(base_url)
+    players_url = "https://app.dartsorakel.com/dropdownDataSearch"
+    url_response = await get_data(players_url)
     if not url_response:
         return None
 
@@ -78,9 +98,7 @@ async def fetch_player_data(player_name, date_from, date_to):
     for player in data:
         player_data[player['player_name']] = {
             'player_name': player['player_name'],
-            'player_key': player['player_key'],
-            'rank': player['rank'],
-            'maximums': player['stat']
+            'player_key': player['player_key']
         }
 
     if player_name not in player_data:
