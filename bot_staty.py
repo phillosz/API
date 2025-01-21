@@ -325,6 +325,20 @@ async def premium_stats_command(ctx, player_name: str, date_from: str = None, da
 
     embed = create_premium_embed(player_name, player_data)
     await ctx.send(embed=embed)
+    
+    # Add a new embed for the last 10 matches
+    if "last_matches" in player_data:
+        matches_embed = discord.Embed(
+            title=f"Last 10 Matches for {player_name}",
+            color=discord.Color.gold()
+        )
+        for match in player_data["last_matches"][:10]:
+            matches_embed.add_field(
+                name=f"vs {match['opponent']} on {match['date']}",
+                value=f"Legs: {match['legs']}, 180s: {match['180s']}",
+                inline=False
+            )
+        await ctx.send(embed=matches_embed)
 
 @bot.command(name="compare")
 async def compare_command(ctx, player1_name: str, player2_name: str, date_from: str = None, date_to: str = None):
