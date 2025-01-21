@@ -455,7 +455,7 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
         await ctx.send("Unable to fetch matches data.")
         return
     
-    matches = matches_response.get("matches", [])  # Adjust to new data structure
+    matches = matches_response.get([])  # Adjust to new data structure
     matches.sort(key=lambda x: x['game_time'])  # Order matches by game_time
     
     embeds = []
