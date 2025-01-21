@@ -80,7 +80,6 @@ async def fetch_last_matches(player_key, limit=10):
 async def fetch_player_data(player_name, date_from, date_to):
     timestamp = int(datetime.now().timestamp() * 1000)
     
-    base_url = f"https://app.dartsorakel.com/api/stats/player?dateFrom={date_from}&dateTo={date_to}&rankKey=26&organStat=All&tourns=All&minMatches=200&tourCardYear=&showStatsBreakdown=0&_={timestamp}"
     players_url = "https://app.dartsorakel.com/dropdownDataSearch"
     url_response = await get_data(players_url)
     if not url_response:
@@ -178,7 +177,7 @@ def create_embed(player_name, data, color, description):
     if "last_matches" in data:
         for match in data["last_matches"]:
             embed.add_field(
-                name=f"Match vs {match['opponent']} on {match['date']}",
+                name=f"vs {match['opponent']} on {match['date']}",
                 value=f"Legs: {match['legs']}, 180s: {match['180s']}",
                 inline=False
             )
