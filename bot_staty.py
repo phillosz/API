@@ -1,21 +1,23 @@
+import os
+from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 from datetime import datetime, timedelta
 import aiohttp
-from bs4 import BeautifulSoup  # Add this import
+from bs4 import BeautifulSoup
 
-# Bot Setup
+load_dotenv()
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Premium users
 PREMIUM_USERS = {586540043812864050, 833783091003785266, 738811763101007923}
 
-# Cache for storing fetched player data and API responses within the same command execution
 player_data_cache = {}
 api_response_cache = {}
-cache_ttl = 3600  # Time-to-live for cache in seconds (1 hour)
+cache_ttl = 3600
 cache_timestamp = {}
 
 async def get_data(url):
@@ -58,7 +60,6 @@ async def fetch_last_matches(player_key, limit=10):
     for match in data["data"]:
         if len(last_matches) >= limit:
             break
-        # Extract opponent's name from HTML link
         soup = BeautifulSoup(match["opponent"], "html.parser")
         opponent_name = soup.get_text()
         
@@ -95,17 +96,14 @@ async def fetch_player_data(player_name, date_from, date_to):
 
     player_key = player_data[player_name]["player_key"]
 
-    # Fetch additional statistics
     additional_stats = await fetch_additional_stats(player_key)
     if additional_stats:
         player_data[player_name]['additional_stats'] = additional_stats
 
-    # Fetch last matches
     last_matches = await fetch_last_matches(player_key)
     if last_matches:
         player_data[player_name]['last_matches'] = last_matches
 
-    # More detailed statistics URLs
     stats_urls = {
         "average": f"https://app.dartsorakel.com/api/stats/player?rankKey=25&showStatsBreakdown=0&playerKeyToHighlight={player_key}&minMatches=200&limit=32&_={timestamp}",
         "average_actual": f"https://app.dartsorakel.com/api/stats/player?dateFrom={date_from}&dateTo={date_to}&rankKey=25&organStat=All&tourns=All&minMatches=200&tourCardYear=&showStatsBreakdown=0&_={timestamp}",
@@ -131,7 +129,7 @@ def fill_missing_stats(data):
     additional_stats = data["additional_stats"]
 
     def calculate_average(values):
-        valid_values = [v for v in values if v is not None]  # Filter out None values
+        valid_values = [v for v in values if v is not None]
         return sum(float(v.strip('%')) if isinstance(v, str) and v.endswith('%') else float(v) for v in valid_values) / len(valid_values)
 
     if "average" not in data and "Averages" in additional_stats:
@@ -153,10 +151,9 @@ def create_embed(player_name, data, color, description):
     embed = discord.Embed(
         title=f"Statistics for player {player_name}",
         description=description,
-        color=color  # Colour of the embed
+        color=color
     )
 
-    # Add pairs of statistics
     if "rank" in data:
         embed.add_field(name="🏆 Rank", value=data["rank"], inline=True)
     if "average" in data or "average_actual" in data:
@@ -193,10 +190,9 @@ def create_premium_embed(player_name, data):
     embed = discord.Embed(
         title=f"Premium statistics for player {player_name}",
         description="In-depth statistics.",
-        color=discord.Color.gold()  # Colour of the embed
+        color=discord.Color.gold()
     )
 
-    # Add pairs of statistics
     if "rank" in data:
         embed.add_field(name="🏆 Rank", value=data["rank"], inline=True)
     if "average" in data or "average_actual" in data:
@@ -214,11 +210,9 @@ def create_premium_embed(player_name, data):
     if "maximums" in data:
         embed.add_field(name="🎲 Maximums Total", value=data["maximums"], inline=True)
 
-    # Add additional stats if available
     if "additional_stats" in data:
         additional_stats = data["additional_stats"]
         for stat_name, stat_values in additional_stats.items():
-            # Convert None values to empty strings
             stat_values = [str(value) if value is not None else '' for value in stat_values]
             embed.add_field(name=stat_name, value=", ".join(stat_values), inline=False)
 
@@ -263,16 +257,15 @@ def create_comparison_embed(player1_name, player1_data, player2_name, player2_da
 
     return embed
 
-# Příkaz pro základní statistiky
 @bot.command(name="stats")
 async def stats_command(ctx, player_name: str, date_from: str = None, date_to: str = None):
     global player_data_cache, api_response_cache, cache_timestamp
-    player_data_cache = {}  # Clear cache at the start of each command execution
-    api_response_cache = {}  # Clear API response cache at the start of each command execution
-    cache_timestamp = {}  # Clear cache timestamps at the start of each command execution
+    player_data_cache = {}
+    api_response_cache = {}
+    cache_timestamp = {}
 
     if date_from is None:
-        date_from = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")  # Change to 45 days
+        date_from = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")
     if date_to is None:
         date_to = datetime.now().strftime("%Y-%m-%d")
 
@@ -291,15 +284,14 @@ async def stats_command(ctx, player_name: str, date_from: str = None, date_to: s
     embed = create_embed(player_name, player_data, discord.Color.blue(), "Basic statistics overview.")
     await ctx.send(embed=embed)
 
-# Command for premium users
 @bot.command(name="premiumstats")
 async def premium_stats_command(ctx, player_name: str, date_from: str = None, date_to: str = None):
     global player_data_cache, api_response_cache
-    player_data_cache = {}  # Clear cache at the start of each command execution
-    api_response_cache = {}  # Clear API response cache at the start of each command execution
+    player_data_cache = {}
+    api_response_cache = {}
 
     if date_from is None:
-        date_from = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")  # Change to 45 days
+        date_from = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")
     if date_to is None:
         date_to = datetime.now().strftime("%Y-%m-%d")
 
@@ -318,7 +310,6 @@ async def premium_stats_command(ctx, player_name: str, date_from: str = None, da
     embed = create_premium_embed(player_name, player_data)
     await ctx.send(embed=embed)
     
-    # Create an embed for the last 10 matches
     if "last_matches" in player_data:
         matches = player_data["last_matches"][:10]
         embeds = []
@@ -345,11 +336,10 @@ async def premium_stats_command(ctx, player_name: str, date_from: str = None, da
 @bot.command(name="compare")
 async def compare_command(ctx, player1_name: str, player2_name: str, date_from: str = None, date_to: str = None):
     global player_data_cache, api_response_cache
-    player_data_cache = {}  # Clear cache at the start of each command execution
-    api_response_cache = {}  # Clear API response cache at the start of each command execution
-
+    player_data_cache = {}
+    api_response_cache = {}
     if date_from is None:
-        date_from = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")  # Change to 45 days
+        date_from = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")
     if date_to is None:
         date_to = datetime.now().strftime("%Y-%m-%d")
 
@@ -376,10 +366,10 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
 @bot.command(name="lastmatches")
 async def last_matches_command(ctx, player_name: str):
     global player_data_cache, api_response_cache, cache_timestamp
-    player_data_cache = {}  # Clear cache at the start of each command execution
-    api_response_cache = {}  # Clear API response cache at the start of each command execution
-    cache_timestamp = {}  # Clear cache timestamps at the start of each command execution
-
+    player_data_cache = {}
+    api_response_cache = {}
+    cache_timestamp = {}
+    
     player_data = await fetch_last_matches(player_name)
     if not player_data:
         await ctx.send(f"Statistics for player {player_name} could not been loaded.")
@@ -434,7 +424,6 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
             break
     
     if not tournament_id:
-        # Provide hints for 5 past and 5 future tournaments
         past_tournaments = [t for t in completed_tournaments_response.get("data", [])[:5]]
         future_tournaments = [t for t in tournaments_response.get("data", [])[:5]]
         
@@ -455,14 +444,14 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
         await ctx.send("Unable to fetch matches data.")
         return
     
-    matches = matches_response.copy()  # Adjust to new data structure
-    matches.sort(key=lambda x: x['game_time'])  # Order matches by game_time
+    matches = matches_response.copy()
+    matches.sort(key=lambda x: x['game_time'])
     
     embeds = []
     embed = discord.Embed(
         title=f"Tournament: {tournament_name}",
         description="",
-        color=discord.Color.blue()  # Set the color of the embed
+        color=discord.Color.blue()
     )
     
     if player1_name and player2_name:
@@ -534,5 +523,4 @@ async def shutdown(ctx):
     await ctx.send("Shutting down...")
     await bot.close()
 
-# Spuštění bota
-bot.run("MTMyNjkxMDY4MjA0NTc0MzE1NA.G4W2-Y.H4jux_lnuRTpkxDJrMXUMgNcQ7nqFkY7qPGZcs")  # Replace with a secure way to load the token
+bot.run(DISCORD_TOKEN)

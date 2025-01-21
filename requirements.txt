@@ -6,3 +6,4 @@ matplotlib
 aiocache
 cachetools
 bs4
+dotenv
