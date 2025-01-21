@@ -83,7 +83,7 @@ async def fetch_last_matches(player_key, limit=10):
 
     last_matches = sorted(
         match_map.values(),
-        key=lambda m: datetime.fromisoformat(m["date"]),
+        key=lambda m: datetime.strptime(m["date"], "%Y-%m-%d %H:%M:%S"),
         reverse=True
     )[:limit]
     return last_matches
