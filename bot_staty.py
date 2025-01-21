@@ -176,10 +176,16 @@ class MatchDetailsView(View):
             details = (
                 f"Opponent: {match['opponent']}\n"
                 f"Date: {match['date']}\n"
-                f"Skóre: {match['loser_score']} : {match['winner_score']}\n"
-                f"180s: {match['stat1']}\n"
-                f"Stat2: {match.get('stat2', 'N/A')}\n"
-                f"Stat3: {match.get('stat3', 'N/A')}\n"
+                f"Score: {match['loser_score']} : {match['winner_score']}\n"
+                f"Average: {match.get('average', 'N/A')}\n"
+                f"180s: {match.get('thrown_180', 'N/A')}\n"
+                f"Checkout %: {match.get('checkout_pcnt', 'N/A')}\n"
+                f"Highest Checkout: {match.get('highest_checkout', 'N/A')}\n"
+                f"Leg Win First: {match.get('leg_win_first', 'N/A')}\n"
+                f"Leg Win Second: {match.get('leg_win_second', 'N/A')}\n"
+                f"Count 171-180: {match.get('count_171_180', 'N/A')}\n"
+                f"Count 140: {match.get('count_140', 'N/A')}\n"
+                f"Legs Won %: {match.get('legs_won_pcnt', 'N/A')}\n"
             )
             await interaction.response.send_message(details, ephemeral=True)
         return callback
