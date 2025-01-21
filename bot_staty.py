@@ -165,8 +165,10 @@ class MatchDetailsView(View):
             details = (
                 f"Opponent: {match['opponent']}\n"
                 f"Date: {match['date']}\n"
-                f"Legs: {match['legs']}\n"
-                f"180s: {match['180s']}\n"
+                f"Skóre: {match['loser_score']} : {match['winner_score']}\n"
+                f"180s: {match['stat1']}\n"
+                f"Stat2: {match.get('stat2', 'N/A')}\n"
+                f"Stat3: {match.get('stat3', 'N/A')}\n"
             )
             await interaction.response.send_message(details, ephemeral=True)
         return callback
