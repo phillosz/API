@@ -318,28 +318,27 @@ async def premium_stats_command(ctx, player_name: str, date_from: str = None, da
     embed = create_premium_embed(player_name, player_data)
     await ctx.send(embed=embed)
     
-    # Split additional_stats into multiple embeds if necessary
-    if "additional_stats" in player_data:
-        additional_stats = player_data["additional_stats"]
-        stats_items = list(additional_stats.items())
+    # Create an embed for the last 10 matches
+    if "last_matches" in player_data:
+        matches = player_data["last_matches"][:10]
         embeds = []
-        current_embed = discord.Embed(
-            title=f"Additional Stats for {player_name}",
+        matches_embed = discord.Embed(
+            title=f"Last 10 Matches for {player_name}",
             color=discord.Color.gold()
         )
-        for stat_name, stat_values in stats_items:
-            if len(current_embed.fields) >= 25:
-                embeds.append(current_embed)
-                current_embed = discord.Embed(
-                    title=f"Additional Stats for {player_name} (cont.)",
+        for match in matches:
+            if len(matches_embed.fields) >= 25:
+                embeds.append(matches_embed)
+                matches_embed = discord.Embed(
+                    title=f"Last 10 Matches for {player_name} (cont.)",
                     color=discord.Color.gold()
                 )
-            current_embed.add_field(
-                name=stat_name,
-                value=", ".join(stat_values),
+            matches_embed.add_field(
+                name=f"vs {match['opponent']} on {match['date']}",
+                value=f"Legs: {match['legs']}, 180s: {match['180s']}",
                 inline=False
             )
-        embeds.append(current_embed)
+        embeds.append(matches_embed)
         for em in embeds:
             await ctx.send(embed=em)
 
