@@ -48,29 +48,41 @@ async def fetch_additional_stats(player_key):
     return additional_stats
 
 async def fetch_last_matches(player_key, limit=10):
-    timestamp = int(datetime.now().timestamp() * 1000)
-    
-    url = f"https://app.dartsorakel.com/api/player/matches/{player_key}?rankKey=26&organStat=All&tourns=All&limit={limit}&_={timestamp}"
-    url_response = await get_data(url)
+    rank_keys = {
+        25: "average",
+        26: "thrown_180",
+        1053: "checkout_pcnt",
+        1028: "highest_checkout",
+        1039: "leg_win_first",
+        1040: "leg_win_second",
+        1045: "count_171_180",
+        1046: "count_140",
+        1027: "legs_won_pcnt"
+    }
+    match_map = {}
 
-    data = url_response.copy()
-    last_matches = []
-    
-    for match in data["data"]:
-        if len(last_matches) >= limit:
-            break
-        # Extract opponent's name from HTML link
-        soup = BeautifulSoup(match["opponent"], "html.parser")
-        opponent_name = soup.get_text()
-        
-        legs = match["loser_score"] + match["winner_score"]
-        last_matches.append({
-            "opponent": opponent_name,
-            "date": match["match_date"],
-            "legs": legs,
-            "180s": match["stat1"]
-        })
+    for code, stat_name in rank_keys.items():
+        timestamp = int(datetime.now().timestamp() * 1000)
+        url = (
+            f"https://app.dartsorakel.com/api/player/matches/{player_key}"
+            f"?rankKey={code}&organStat=All&tourns=All&limit={limit}&_={timestamp}"
+        )
+        data = await get_data(url)
+        if not data:
+            continue
+        for match in data["data"]:
+            match_id = match["match_id"]
+            if match_id not in match_map:
+                soup = BeautifulSoup(match["opponent"], "html.parser")
+                match_map[match_id] = {
+                    "opponent": soup.get_text(),
+                    "date": match["match_date"],
+                    "loser_score": match["loser_score"],
+                    "winner_score": match["winner_score"]
+                }
+            match_map[match_id][stat_name] = match["stat"]
 
+    last_matches = sorted(match_map.values(), key=lambda m: m["date"], reverse=True)[:limit]
     return last_matches
 
 async def fetch_player_data(player_name, date_from, date_to):
