@@ -70,7 +70,7 @@ async def fetch_last_matches(player_key, limit=10):
         if not data:
             continue
         for match in data["data"]:
-            match_id = match["match_id"]
+            match_id = match["event_key"]
             if match_id not in match_map:
                 soup = BeautifulSoup(match["opponent"], "html.parser")
                 match_map[match_id] = {
