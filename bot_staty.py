@@ -3,7 +3,6 @@ from discord.ext import commands
 from datetime import datetime, timedelta
 import aiohttp
 from bs4 import BeautifulSoup  # Add this import
-from discord.ui import View, Button
 
 # Bot Setup
 intents = discord.Intents.default()
@@ -48,44 +47,29 @@ async def fetch_additional_stats(player_key):
     return additional_stats
 
 async def fetch_last_matches(player_key, limit=10):
-    rank_keys = {
-        25: "average",
-        26: "thrown_180",
-        1053: "checkout_pcnt",
-        1028: "highest_checkout",
-        1039: "leg_win_first",
-        1040: "leg_win_second",
-        1045: "count_171_180",
-        1046: "count_140",
-        1027: "legs_won_pcnt"
-    }
-    match_map = {}
+    timestamp = int(datetime.now().timestamp() * 1000)
+    
+    url = f"https://app.dartsorakel.com/api/player/matches/{player_key}?rankKey=26&organStat=All&tourns=All&limit={limit}&_={timestamp}"
+    url_response = await get_data(url)
 
-    for code, stat_name in rank_keys.items():
-        timestamp = int(datetime.now().timestamp() * 1000)
-        url = (
-            f"https://app.dartsorakel.com/api/player/matches/{player_key}?rankKey={code}&organStat=All&tourns=All&_={timestamp}"
-        )
-        data = await get_data(url)
-        if not data:
-            continue
-        for match in data["data"]:
-            match_id = match["event_key"]
-            if match_id not in match_map:
-                soup = BeautifulSoup(match["opponent"], "html.parser")
-                match_map[match_id] = {
-                    "opponent": soup.get_text(),
-                    "date": match["match_date"],
-                    "loser_score": match["loser_score"],
-                    "winner_score": match["winner_score"]
-                }
-            match_map[match_id][stat_name] = match["stat"]
+    data = url_response.copy()
+    last_matches = []
+    
+    for match in data["data"]:
+        if len(last_matches) >= limit:
+            break
+        # Extract opponent's name from HTML link
+        soup = BeautifulSoup(match["opponent"], "html.parser")
+        opponent_name = soup.get_text()
+        
+        legs = match["loser_score"] + match["winner_score"]
+        last_matches.append({
+            "opponent": opponent_name,
+            "date": match["match_date"],
+            "legs": legs,
+            "180s": match["stat1"]
+        })
 
-    last_matches = sorted(
-        match_map.values(),
-        key=lambda m: datetime.strptime(m["date"], "%Y-%m-%d %H:%M:%S"),
-        reverse=True
-    )[:limit]
     return last_matches
 
 async def fetch_player_data(player_name, date_from, date_to):
@@ -163,37 +147,6 @@ def fill_missing_stats(data):
     if "maximum_per_leg_actual" not in data and "180's per leg" in additional_stats:
         data["maximum_per_leg_actual"] = additional_stats["180's per leg"][-1]
 
-class MatchDetailsView(View):
-    def __init__(self, last_matches):
-        super().__init__()
-        for i, match in enumerate(last_matches):
-            btn = Button(
-                label=f"Match {i+1}",
-                style=discord.ButtonStyle.primary,
-                custom_id=f"match_{i}"
-            )
-            btn.callback = self.make_callback(match)
-            self.add_item(btn)
-
-    def make_callback(self, match):
-        async def callback(interaction: discord.Interaction):
-            details = (
-                f"Opponent: {match['opponent']}\n"
-                f"Date: {match['date']}\n"
-                f"Score: {match['loser_score']} : {match['winner_score']}\n"
-                f"Average: {match.get('average', 'N/A')}\n"
-                f"180s: {match.get('thrown_180', 'N/A')}\n"
-                f"Checkout %: {match.get('checkout_pcnt', 'N/A')}\n"
-                f"Highest Checkout: {match.get('highest_checkout', 'N/A')}\n"
-                f"Leg Win First: {match.get('leg_win_first', 'N/A')}\n"
-                f"Leg Win Second: {match.get('leg_win_second', 'N/A')}\n"
-                f"Count 171-180: {match.get('count_171_180', 'N/A')}\n"
-                f"Count 140: {match.get('count_140', 'N/A')}\n"
-                f"Legs Won %: {match.get('legs_won_pcnt', 'N/A')}\n"
-            )
-            await interaction.response.send_message(details, ephemeral=True)
-        return callback
-
 def create_embed(player_name, data, color, description):
     fill_missing_stats(data)
 
@@ -222,13 +175,17 @@ def create_embed(player_name, data, color, description):
         embed.add_field(name="🎲 Maximums Total", value=data["maximums"], inline=True)
         
     if "last_matches" in data:
-        # Remove the old loop adding fields and attach a view instead
-        return embed, MatchDetailsView(data["last_matches"])
+        for match in data["last_matches"]:
+            embed.add_field(
+                name=f"Match vs {match['opponent']} on {match['date']}",
+                value=f"Legs: {match['legs']}, 180s: {match['180s']}",
+                inline=False
+            )
 
     embed.set_footer(text="For further information use !help, or contact the dev.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
 
-    return embed, None
+    return embed
 
 def create_premium_embed(player_name, data):
     fill_missing_stats(data)
@@ -248,7 +205,7 @@ def create_premium_embed(player_name, data):
         embed.add_field(name="🎯 Average", value=f"{average} (Current: {average_actual})", inline=False)
     if "checkout_pcnt" in data or "checkout_pcnt_actual" in data:
         checkout_pcnt = data.get('checkout_pcnt', 'N/A')
-        checkout_pcnt_actual = data.get('checkout_pcnt_actual', 'N/A')
+        checkout_pcnt_actual = data.get('checkout_pcnt', 'N/A')
         embed.add_field(name="✅ Checkout %", value=f"{checkout_pcnt} (Current: {checkout_pcnt_actual})", inline=False)
     if "maximum_per_leg" in data or "maximum_per_leg_actual" in data:
         maximum_per_leg = data.get('maximum_per_leg', 'N/A')
@@ -331,11 +288,8 @@ async def stats_command(ctx, player_name: str, date_from: str = None, date_to: s
         await ctx.send(f"Statistics for player {player_name} could not been loaded.")
         return
 
-    embed, view = create_embed(player_name, player_data, discord.Color.blue(), "Basic statistics overview.")
-    if view:
-        await ctx.send(embed=embed, view=view)
-    else:
-        await ctx.send(embed=embed)
+    embed = create_embed(player_name, player_data, discord.Color.blue(), "Basic statistics overview.")
+    await ctx.send(embed=embed)
 
 # Command for premium users
 @bot.command(name="premiumstats")
