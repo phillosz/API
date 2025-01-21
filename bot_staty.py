@@ -366,7 +366,7 @@ async def compare_command(ctx, player1_name: str, player2_name: str, date_from: 
     embed = create_comparison_embed(player1_name, player1_data, player2_name, player2_data)
     await ctx.send(embed=embed)
 
-@bot.command(name="lastmatches")
+#@bot.command(name="lastmatches")
 async def last_matches_command(ctx, player_name: str):
     global player_data_cache, api_response_cache, cache_timestamp
     player_data_cache = {}
