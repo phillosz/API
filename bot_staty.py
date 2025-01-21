@@ -222,14 +222,6 @@ def create_premium_embed(player_name, data):
             stat_values = [str(value) if value is not None else '' for value in stat_values]
             embed.add_field(name=stat_name, value=", ".join(stat_values), inline=False)
 
-    if "last_matches" in data:
-        for match in data["last_matches"]:
-            embed.add_field(
-                name=f"Match vs {match['opponent']} on {match['date']}",
-                value=f"Legs: {match['legs']}, 180s: {match['180s']}",
-                inline=False
-            )
-
     embed.set_footer(text="For further information use !help, or contact the dev.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
 
@@ -348,30 +340,6 @@ async def premium_stats_command(ctx, player_name: str, date_from: str = None, da
                 inline=False
             )
         embeds.append(current_embed)
-        for em in embeds:
-            await ctx.send(embed=em)
-    
-    # Modify the creation of last_matches embed to handle embed field limits
-    if "last_matches" in player_data:
-        matches = player_data["last_matches"][:10]
-        embeds = []
-        matches_embed = discord.Embed(
-            title=f"Last 10 Matches for {player_name}",
-            color=discord.Color.gold()
-        )
-        for match in matches:
-            if len(matches_embed.fields) >= 25:
-                embeds.append(matches_embed)
-                matches_embed = discord.Embed(
-                    title=f"Last 10 Matches for {player_name} (cont.)",
-                    color=discord.Color.gold()
-                )
-            matches_embed.add_field(
-                name=f"vs {match['opponent']} on {match['date']}",
-                value=f"Legs: {match['legs']}, 180s: {match['180s']}",
-                inline=False
-            )
-        embeds.append(matches_embed)
         for em in embeds:
             await ctx.send(embed=em)
 
