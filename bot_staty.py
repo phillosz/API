@@ -64,7 +64,8 @@ async def fetch_last_matches(player_key, limit=10):
     for code, stat_name in rank_keys.items():
         timestamp = int(datetime.now().timestamp() * 1000)
         url = (
-            f"https://app.dartsorakel.com/api/player/matches/{player_key}?rankKey={code}&organStat=All&tourns=All&limit={limit}&_={timestamp}"
+            f"https://app.dartsorakel.com/api/player/matches/{player_key}?"
+            f"rankKey={code}&organStat=All&tourns=All&_={timestamp}"
         )
         data = await get_data(url)
         if not data:
