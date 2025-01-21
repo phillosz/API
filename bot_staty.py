@@ -3,6 +3,7 @@ from discord.ext import commands
 from datetime import datetime, timedelta
 import aiohttp
 from bs4 import BeautifulSoup  # Add this import
+from discord.ui import View, Button
 
 # Bot Setup
 intents = discord.Intents.default()
@@ -147,6 +148,29 @@ def fill_missing_stats(data):
     if "maximum_per_leg_actual" not in data and "180's per leg" in additional_stats:
         data["maximum_per_leg_actual"] = additional_stats["180's per leg"][-1]
 
+class MatchDetailsView(View):
+    def __init__(self, last_matches):
+        super().__init__()
+        for i, match in enumerate(last_matches):
+            btn = Button(
+                label=f"Match {i+1}",
+                style=discord.ButtonStyle.primary,
+                custom_id=f"match_{i}"
+            )
+            btn.callback = self.make_callback(match)
+            self.add_item(btn)
+
+    def make_callback(self, match):
+        async def callback(interaction: discord.Interaction):
+            details = (
+                f"Opponent: {match['opponent']}\n"
+                f"Date: {match['date']}\n"
+                f"Legs: {match['legs']}\n"
+                f"180s: {match['180s']}\n"
+            )
+            await interaction.response.send_message(details, ephemeral=True)
+        return callback
+
 def create_embed(player_name, data, color, description):
     fill_missing_stats(data)
 
@@ -175,17 +199,13 @@ def create_embed(player_name, data, color, description):
         embed.add_field(name="🎲 Maximums Total", value=data["maximums"], inline=True)
         
     if "last_matches" in data:
-        for match in data["last_matches"]:
-            embed.add_field(
-                name=f"Match vs {match['opponent']} on {match['date']}",
-                value=f"Legs: {match['legs']}, 180s: {match['180s']}",
-                inline=False
-            )
+        # Remove the old loop adding fields and attach a view instead
+        return embed, MatchDetailsView(data["last_matches"])
 
     embed.set_footer(text="For further information use !help, or contact the dev.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
 
-    return embed
+    return embed, None
 
 def create_premium_embed(player_name, data):
     fill_missing_stats(data)
@@ -205,7 +225,7 @@ def create_premium_embed(player_name, data):
         embed.add_field(name="🎯 Average", value=f"{average} (Current: {average_actual})", inline=False)
     if "checkout_pcnt" in data or "checkout_pcnt_actual" in data:
         checkout_pcnt = data.get('checkout_pcnt', 'N/A')
-        checkout_pcnt_actual = data.get('checkout_pcnt', 'N/A')
+        checkout_pcnt_actual = data.get('checkout_pcnt_actual', 'N/A')
         embed.add_field(name="✅ Checkout %", value=f"{checkout_pcnt} (Current: {checkout_pcnt_actual})", inline=False)
     if "maximum_per_leg" in data or "maximum_per_leg_actual" in data:
         maximum_per_leg = data.get('maximum_per_leg', 'N/A')
@@ -288,8 +308,11 @@ async def stats_command(ctx, player_name: str, date_from: str = None, date_to: s
         await ctx.send(f"Statistics for player {player_name} could not been loaded.")
         return
 
-    embed = create_embed(player_name, player_data, discord.Color.blue(), "Basic statistics overview.")
-    await ctx.send(embed=embed)
+    embed, view = create_embed(player_name, player_data, discord.Color.blue(), "Basic statistics overview.")
+    if view:
+        await ctx.send(embed=embed, view=view)
+    else:
+        await ctx.send(embed=embed)
 
 # Command for premium users
 @bot.command(name="premiumstats")
