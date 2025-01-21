@@ -205,7 +205,7 @@ def create_premium_embed(player_name, data):
         embed.add_field(name="🎯 Average", value=f"{average} (Current: {average_actual})", inline=False)
     if "checkout_pcnt" in data or "checkout_pcnt_actual" in data:
         checkout_pcnt = data.get('checkout_pcnt', 'N/A')
-        checkout_pcnt_actual = data.get('checkout_pcnt', 'N/A')
+        checkout_pcnt_actual = data.get('checkout_pcnt_actual', 'N/A')
         embed.add_field(name="✅ Checkout %", value=f"{checkout_pcnt} (Current: {checkout_pcnt_actual})", inline=False)
     if "maximum_per_leg" in data or "maximum_per_leg_actual" in data:
         maximum_per_leg = data.get('maximum_per_leg', 'N/A')
@@ -221,6 +221,14 @@ def create_premium_embed(player_name, data):
             # Convert None values to empty strings
             stat_values = [str(value) if value is not None else '' for value in stat_values]
             embed.add_field(name=stat_name, value=", ".join(stat_values), inline=False)
+
+    if "last_matches" in data:
+        for match in data["last_matches"]:
+            embed.add_field(
+                name=f"Match vs {match['opponent']} on {match['date']}",
+                value=f"Legs: {match['legs']}, 180s: {match['180s']}",
+                inline=False
+            )
 
     embed.set_footer(text="For further information use !help, or contact the dev.")
     embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/9w2gbtba94m24p5rngzzl/Professional_Darts_Corporation_logo.svg.png?rlkey=4bmsph6uakm94ogqfgzwgtk02&st=18fecn4r&raw=1")  # Add a relevant thumbnail URL
