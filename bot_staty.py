@@ -11,11 +11,6 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
-
 PREMIUM_USERS = {586540043812864050, 833783091003785266, 738811763101007923}
 
 player_data_cache = {}
