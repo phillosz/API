@@ -1,1 +1,1 @@
-worker: python bot_staty.py
+worker: python run.py

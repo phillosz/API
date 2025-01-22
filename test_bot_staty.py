@@ -115,7 +115,7 @@ class TestCreateEmbed(unittest.TestCase):
 
         embed = create_embed("Test Player", data, discord.Color.blue(), "Test Description")
 
-        self.assertEqual(embed.title, "Statistiky pro hráče Test Player")
+        self.assertEqual(embed.title, "Statistics for player Test Player")
         self.assertEqual(embed.description, "Test Description")
         self.assertEqual(embed.color, discord.Color.blue())
         self.assertEqual(embed.fields[0].name, "🏆 Rank")
@@ -126,7 +126,7 @@ class TestCreateEmbed(unittest.TestCase):
         self.assertEqual(embed.fields[2].value, "50.00% (Current: 60%)")
         self.assertEqual(embed.fields[3].name, "💥 Max per Leg")
         self.assertEqual(embed.fields[3].value, "0.3 (Current: 0.4)")
-        self.assertEqual(embed.fields[4].name, "🎲 Maximums celkem")
+        self.assertEqual(embed.fields[4].name, "🎲 Maximums Total")
         self.assertEqual(embed.fields[4].value, "100")  # Convert expected value to string
 
     def test_create_embed_basic(self):

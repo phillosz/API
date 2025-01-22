@@ -11,12 +11,6 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
-
 PREMIUM_USERS = {586540043812864050, 833783091003785266, 738811763101007923}
 
 player_data_cache = {}
@@ -525,4 +519,5 @@ async def shutdown(ctx):
     await ctx.send("Shutting down...")
     await bot.close()
 
-bot.run(DISCORD_TOKEN)
+def run_bot():
+    bot.run(DISCORD_TOKEN)
