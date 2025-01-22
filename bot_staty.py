@@ -525,4 +525,5 @@ async def shutdown(ctx):
     await ctx.send("Shutting down...")
     await bot.close()
 
-bot.run(DISCORD_TOKEN)
+def run_bot():
+    bot.run(DISCORD_TOKEN)
