@@ -575,40 +575,64 @@ async def shutdown(ctx):
 def run_bot():
     bot.run(DISCORD_TOKEN)
 
-@bot.command(name="superseriesdata")
-async def fetch_super_series_data(ctx):
+@bot.command(name="playerstats")
+async def playerstats_command(ctx, player_name: str, start_date_str: str = None, end_date_str: str = None):
+    """Fetch stats for a specific player, optionally filtering by date range."""
     base_url = "https://api-igamedc.igamemedia.com/api/mss-web/results-fixtures?week="
     detail_url = "https://api-igamedc.igamemedia.com/api/mss-web/fixtures"
-    all_players_stats = {}
+
+    # Parse optional dates
+    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
+    end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
 
     async def get_json(session, url):
         async with session.get(url) as resp:
             return await resp.json()
 
+    gathered_stats = []
+
     async with aiohttp.ClientSession() as session:
-        # 1) Stáhneme data o všech zápasech
+        # 1) Load all weeks in parallel
         tasks = [get_json(session, f"{base_url}{week}") for week in range(1,198)]
         weeks_responses = await asyncio.gather(*tasks)
 
         match_ids = []
+        # 2) Collect all matchIDs
         for data in weeks_responses:
             for fixture in data.get("fixtures", []):
-                match_ids.append(fixture["gameId"])
+                # Filter by date if desired
+                fixture_time_str = fixture.get("fixture")
+                if fixture_time_str:
+                    fixture_date = datetime.fromisoformat(fixture_time_str.replace("Z","")).date()
+                    if (not start_date or fixture_date >= start_date) and (not end_date or fixture_date <= end_date):
+                        match_ids.append(fixture["gameId"])
 
-        # 2) Zpracujeme detailní data jednotlivých zápasů
+        # 3) For each match, load the detailed stats
         detail_tasks = [get_json(session, f"{detail_url}/{m_id}") for m_id in match_ids]
         matches_details = await asyncio.gather(*detail_tasks)
 
-        # 3) Uložíme statistiky pro všechny hráče
+        # 4) Extract stats for the requested player
         for match in matches_details:
-            players_info = match.get("playersStatistics", {}).get("players", [])
-            stats_info = match.get("playersStatistics", {}).get("statistics", [])
-            for i, player in enumerate(players_info):
-                name = player.get("name", "Unknown Player")
-                if len(stats_info) > i:
-                    if name not in all_players_stats:
-                        all_players_stats[name] = []
-                    all_players_stats[name].append(stats_info[i])
+            ps = match.get("playersStatistics", {})
+            players = ps.get("players", [])
+            stats = ps.get("statistics", [])
+            for i, p in enumerate(players):
+                if p.get("name") == player_name and i < len(stats):
+                    gathered_stats.append(stats[i])
 
-    # 4) Výsledek: statistik pro všechny hráče v dict 'all_players_stats'
-    await ctx.send(f"Zpracováno {len(match_ids)} zápasů, nalezeno {len(all_players_stats)} hráčů.")
+    # 5) Calculate aggregates (example: average 180, average average)
+    if not gathered_stats:
+        await ctx.send(f"No matches found for {player_name} (check spelling/date range).")
+        return
+
+    total_180 = sum(s.get("turns180", 0) for s in gathered_stats)
+    total_avg = sum(s.get("average", 0) for s in gathered_stats)
+    count = len(gathered_stats)
+
+    msg = (
+        f"Stats for {player_name}:\n"
+        f"• Matches found: {count}\n"
+        f"• Average '180' per match: {total_180 / count:.2f}\n"
+        f"• Average 'average' score: {total_avg / count:.2f}"
+    )
+    await ctx.send(msg)
