@@ -529,10 +529,10 @@ async def futuretournament_command(ctx):
                 start_date = datetime.strptime(event["startDate"], "%Y-%m-%d").date()
                 if start_date > today and not event.get("isCancelled", False):
                     future_tournaments.append({
-                        "eventName": event["eventName"],
-                        "startDate": event["startDate"],
-                        "endDate": event.get("endDate", event["startDate"]),
-                        "venueName": event["venueName"],
+                        "eventName": event.get("eventName", "Unknown Event"),
+                        "startDate": event.get("startDate"),
+                        "endDate": event.get("endDate", event.get("startDate")),
+                        "venueName": event.get("venueName", "Unknown Venue"),
                         "month": group_name
                     })
 
