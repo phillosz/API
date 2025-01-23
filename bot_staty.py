@@ -513,6 +513,30 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
     embeds.append(embed)
     await send_paginated_embeds(ctx, embeds)
 
+class MonthSelectView(discord.ui.View):
+    def __init__(self, month_data: dict):
+        super().__init__(timeout=None)
+        self.month_data = month_data
+        for month in self.month_data:
+            self.add_item(MonthButton(month))
+
+class MonthButton(discord.ui.Button):
+    def __init__(self, month: str):
+        super().__init__(label=month, style=discord.ButtonStyle.blurple)
+        self.month = month
+
+    async def callback(self, interaction: discord.Interaction):
+        tournaments = self.view.month_data[self.month]
+        embed = discord.Embed(title=f"Tournaments in {self.month}", color=discord.Color.blue())
+        if tournaments:
+            embed.description = "\n".join([
+                f"{t['eventName']} from {t['startDate']} to {t['endDate']} at {t['venueName']}"
+                for t in tournaments
+            ])
+        else:
+            embed.description = "No tournaments found"
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
 @bot.command(name="futuretournament")
 async def futuretournament_command(ctx):
     new_endpoint_url = "https://www.bbc.com/wc-data/container/sport-calendar?endDate=2025-12-31&shouldHideEventsBeforeToday=false&sport=darts&startDate=2025-02-01&todayDate=2025-01-22"  # every year the URL needs to be updated
@@ -520,7 +544,7 @@ async def futuretournament_command(ctx):
         async with session.get(new_endpoint_url) as resp:
             new_data = await resp.json()
 
-    future_tournaments = []
+    month_data = {}
     today = datetime.now().date()
     for group in new_data.get("eventGroups", []):
         group_name = group.get("groupName", "Unknown Month")
@@ -528,7 +552,9 @@ async def futuretournament_command(ctx):
             if "startDate" in event:
                 start_date = datetime.strptime(event["startDate"], "%Y-%m-%d").date()
                 if start_date > today and not event.get("isCancelled", False):
-                    future_tournaments.append({
+                    if group_name not in month_data:
+                        month_data[group_name] = []
+                    month_data[group_name].append({
                         "eventName": event.get("eventName", "Unknown Event"),
                         "startDate": event.get("startDate"),
                         "endDate": event.get("endDate", event.get("startDate")),
@@ -536,17 +562,8 @@ async def futuretournament_command(ctx):
                         "month": group_name
                     })
 
-    embed = discord.Embed(title="Future Tournaments", color=discord.Color.blue())
-    if future_tournaments:
-        tournaments_str = "\n".join([
-            f"{t['eventName']} (Month: {t['month']}) from {t['startDate']} to {t['endDate']} at {t['venueName']}"
-            for t in future_tournaments
-        ])
-        embed.description = f"Upcoming Tournaments:\n{tournaments_str}"
-    else:
-        embed.description = "No future tournaments found from the new source."
-
-    await ctx.send(embed=embed)
+    view = MonthSelectView(month_data)
+    await ctx.send("Select a month to view tournaments:", view=view)
 
 @bot.command(name="shutdown")
 @commands.is_owner()
