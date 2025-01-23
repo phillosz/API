@@ -515,11 +515,6 @@ async def tournament_command(ctx, tournament_name: str, player1_name: str = None
 
 @bot.command(name="futuretournament")
 async def futuretournament_command(ctx):
-    embed = discord.Embed(title="Future Tournaments", color=discord.Color.blue())
-    embeds = [embed]
-    embeds.append(embed)
-    await send_paginated_embeds(ctx, embeds)
-
     new_endpoint_url = "https://www.bbc.com/wc-data/container/sport-calendar?endDate=2025-12-31&shouldHideEventsBeforeToday=false&sport=darts&startDate=2025-02-01&todayDate=2025-01-22"  # every year the URL needs to be updated
     async with aiohttp.ClientSession() as session:
         async with session.get(new_endpoint_url) as resp:
@@ -541,14 +536,17 @@ async def futuretournament_command(ctx):
                         "month": group_name
                     })
 
+    embed = discord.Embed(title="Future Tournaments", color=discord.Color.blue())
     if future_tournaments:
         tournaments_str = "\n".join([
             f"{t['eventName']} (Month: {t['month']}) from {t['startDate']} to {t['endDate']} at {t['venueName']}"
             for t in future_tournaments
         ])
-        await ctx.send(f"Upcoming Tournaments:\n{tournaments_str}")
+        embed.description = f"Upcoming Tournaments:\n{tournaments_str}"
     else:
-        await ctx.send("No future tournaments found from the new source.")
+        embed.description = "No future tournaments found from the new source."
+
+    await ctx.send(embed=embed)
 
 @bot.command(name="shutdown")
 @commands.is_owner()
