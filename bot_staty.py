@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands
 from datetime import datetime, timedelta
 import aiohttp
+import asyncio
 from bs4 import BeautifulSoup
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -573,3 +574,41 @@ async def shutdown(ctx):
 
 def run_bot():
     bot.run(DISCORD_TOKEN)
+
+@bot.command(name="superseriesdata")
+async def fetch_super_series_data(ctx):
+    base_url = "https://api-igamedc.igamemedia.com/api/mss-web/results-fixtures?week="
+    detail_url = "https://api-igamedc.igamemedia.com/api/mss-web/fixtures"
+    all_players_stats = {}
+
+    async def get_json(session, url):
+        async with session.get(url) as resp:
+            return await resp.json()
+
+    async with aiohttp.ClientSession() as session:
+        # 1) Stáhneme data o všech zápasech
+        tasks = [get_json(session, f"{base_url}{week}") for week in range(1,198)]
+        weeks_responses = await asyncio.gather(*tasks)
+
+        match_ids = []
+        for data in weeks_responses:
+            for fixture in data.get("fixtures", []):
+                match_ids.append(fixture["gameId"])
+
+        # 2) Zpracujeme detailní data jednotlivých zápasů
+        detail_tasks = [get_json(session, f"{detail_url}/{m_id}") for m_id in match_ids]
+        matches_details = await asyncio.gather(*detail_tasks)
+
+        # 3) Uložíme statistiky pro všechny hráče
+        for match in matches_details:
+            players_info = match.get("playersStatistics", {}).get("players", [])
+            stats_info = match.get("playersStatistics", {}).get("statistics", [])
+            for i, player in enumerate(players_info):
+                name = player.get("name", "Unknown Player")
+                if len(stats_info) > i:
+                    if name not in all_players_stats:
+                        all_players_stats[name] = []
+                    all_players_stats[name].append(stats_info[i])
+
+    # 4) Výsledek: statistik pro všechny hráče v dict 'all_players_stats'
+    await ctx.send(f"Zpracováno {len(match_ids)} zápasů, nalezeno {len(all_players_stats)} hráčů.")

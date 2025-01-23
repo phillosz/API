@@ -7,3 +7,4 @@ aiocache
 cachetools
 bs4
 aiohttp
+asyncio
