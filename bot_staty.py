@@ -611,6 +611,7 @@ async def playerstats_command(ctx, player_name: str):
                     print(f"[DEBUG] fixture_date={fixture_date}, last_year={last_year.date()}")
                     if fixture_date >= last_year.date():
                         match_ids_year.append(fixture["gameId"])
+                        print(f"[DEBUG] Adding match ID {fixture['gameId']}")
 
         # 2) For each match in the last year, load detailed stats
         detail_tasks_year = [get_json(session, f"{detail_url}/{m_id}") for m_id in match_ids_year]
