@@ -608,6 +608,7 @@ async def playerstats_command(ctx, player_name: str):
                 fixture_time_str = fixture.get("fixture")
                 if fixture_time_str:
                     fixture_date = datetime.fromisoformat(fixture_time_str.replace("Z","")).date()
+                    print(f"[DEBUG] fixture_date={fixture_date}, last_year={last_year.date()}")
                     if fixture_date >= last_year.date():
                         match_ids_year.append(fixture["gameId"])
 
