@@ -575,64 +575,82 @@ async def shutdown(ctx):
 def run_bot():
     bot.run(DISCORD_TOKEN)
 
+
+
 @bot.command(name="playerstats")
-async def playerstats_command(ctx, player_name: str, start_date_str: str = None, end_date_str: str = None):
-    """Fetch stats for a specific player, optionally filtering by date range."""
+async def playerstats_command(ctx, player_name: str):
+    """Fetch stats for a specific player in two time ranges: last 45 days and last year."""
+
     base_url = "https://api-igamedc.igamemedia.com/api/mss-web/results-fixtures?week="
     detail_url = "https://api-igamedc.igamemedia.com/api/mss-web/fixtures"
 
-    # Parse optional dates
-    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
-    end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
+    now = datetime.now()
+    last_45_days = now - timedelta(days=45)
+    last_year = now - timedelta(days=365)
 
     async def get_json(session, url):
         async with session.get(url) as resp:
             return await resp.json()
 
-    gathered_stats = []
+    # Separate lists to store stats
+    gathered_45 = []
+    gathered_year = []
 
     async with aiohttp.ClientSession() as session:
-        # 1) Load all weeks in parallel
-        tasks = [get_json(session, f"{base_url}{week}") for week in range(1,198)]
+        # 1) Load all weeks in parallel (1..197)
+        tasks = [get_json(session, f"{base_url}{week}") for week in range(1, 198)]
         weeks_responses = await asyncio.gather(*tasks)
 
-        match_ids = []
-        # 2) Collect all matchIDs
+        # Collect match IDs for the last year (larger window)
+        match_ids_year = []
         for data in weeks_responses:
             for fixture in data.get("fixtures", []):
-                # Filter by date if desired
                 fixture_time_str = fixture.get("fixture")
                 if fixture_time_str:
                     fixture_date = datetime.fromisoformat(fixture_time_str.replace("Z","")).date()
-                    if (not start_date or fixture_date >= start_date) and (not end_date or fixture_date <= end_date):
-                        match_ids.append(fixture["gameId"])
+                    if fixture_date >= last_year.date():
+                        match_ids_year.append(fixture["gameId"])
 
-        # 3) For each match, load the detailed stats
-        detail_tasks = [get_json(session, f"{detail_url}/{m_id}") for m_id in match_ids]
-        matches_details = await asyncio.gather(*detail_tasks)
+        # 2) For each match in the last year, load detailed stats
+        detail_tasks_year = [get_json(session, f"{detail_url}/{m_id}") for m_id in match_ids_year]
+        matches_details_year = await asyncio.gather(*detail_tasks_year)
 
-        # 4) Extract stats for the requested player
-        for match in matches_details:
+        # 3) Extract stats for the requested player within last year
+        for match in matches_details_year:
             ps = match.get("playersStatistics", {})
             players = ps.get("players", [])
             stats = ps.get("statistics", [])
+            # Also parse date again for last-45-days check
+            match_date_str = match.get("startDateTime")
+            match_date = datetime.fromisoformat(match_date_str.replace("Z","")) if match_date_str else None
             for i, p in enumerate(players):
                 if p.get("name") == player_name and i < len(stats):
-                    gathered_stats.append(stats[i])
+                    # Always add to the 'year' group
+                    gathered_year.append(stats[i])
+                    # Additionally add to the '45' group if match_date qualifies
+                    if match_date and match_date >= last_45_days:
+                        gathered_45.append(stats[i])
 
-    # 5) Calculate aggregates (example: average 180, average average)
-    if not gathered_stats:
-        await ctx.send(f"No matches found for {player_name} (check spelling/date range).")
-        return
+    # Helper to compute aggregated stats
+    def aggregate_stats(stats_list):
+        if not stats_list:
+            return (0, 0, 0.0, 0.0, 0.0)
 
-    total_180 = sum(s.get("turns180", 0) for s in gathered_stats)
-    total_avg = sum(s.get("average", 0) for s in gathered_stats)
-    count = len(gathered_stats)
+        total_legs = sum(s.get("totalScore", 0) for s in stats_list)
+        total_180 = sum(s.get("turns180", 0) for s in stats_list)
+        count = len(stats_list)
 
-    msg = (
-        f"Stats for {player_name}:\n"
-        f"• Matches found: {count}\n"
-        f"• Average '180' per match: {total_180 / count:.2f}\n"
-        f"• Average 'average' score: {total_avg / count:.2f}"
-    )
+        avg_avg = sum(s.get("average", 0) for s in stats_list) / count
+        avg_checkout = sum(s.get("checkoutPercentage", 0) for s in stats_list) / count
+        ratio_180_per_leg = (total_180 / total_legs) if total_legs else 0
+
+        return (count, total_legs, ratio_180_per_leg, avg_avg, avg_checkout)
+
+    c45, legs45, ratio45, avg45, chk45 = aggregate_stats(gathered_45)
+    cYear, legsYear, ratioYear, avgYear, chkYear = aggregate_stats(gathered_year)
+
+    msg = f"**Stats for {player_name}**\n\n"
+    msg += f"**Last 45 days**\n- Matches: {c45}\n- Legs played: {legs45}\n- 180s/leg: {ratio45:.2f}\n- Avg: {avg45:.2f}\n- Checkout %: {chk45:.2f}\n\n"
+    msg += f"**Last year**\n- Matches: {cYear}\n- Legs played: {legsYear}\n- 180s/leg: {ratioYear:.2f}\n- Avg: {avgYear:.2f}\n- Checkout %: {chkYear:.2f}"
+
     await ctx.send(msg)
