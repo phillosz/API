@@ -121,10 +121,9 @@ async def fetch_player_data(player_name, date_from, date_to):
     return player_data[player_name]
 
 def fill_missing_stats(data):
-    if "additional_stats" not in data:
+    additional_stats = data.get("additional_stats")
+    if not additional_stats:
         return
-
-    additional_stats = data["additional_stats"]
 
     def calculate_average(values):
         valid_values = [v for v in values if v is not None]
