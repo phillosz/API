@@ -47,10 +47,14 @@ async def fetch_additional_stats(player_key):
 
     return additional_stats
 
-async def fetch_last_matches(player_key, limit=10):
+async def fetch_last_matches(player_key, limit=10, date_from=None, date_to=None):
+    if date_from is None:
+        date_from = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+    if date_to is None:
+        date_to = datetime.now().strftime("%Y-%m-%d")
+
     timestamp = int(datetime.now().timestamp() * 1000)
-    
-    url = f"https://app.dartsorakel.com/api/player/matches/{player_key}?rankKey=26&organStat=All&tourns=All&limit={limit}&_={timestamp}"
+    url = f"https://app.dartsorakel.com/api/player/matches/{player_key}?dateFrom={date_from}&dateTo={date_to}&rankKey=26&organStat=TV&tourns=All&limit={limit}&_={timestamp}"
     url_response = await get_data(url)
 
     data = url_response.copy()
